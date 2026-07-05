@@ -1,4 +1,4 @@
-import { GameLoop } from "@/logic/GameLoop";
+/*import { GameLoop } from "@/logic/GameLoop";
 import { GameManager } from "@/logic/GameManager";
 import { GameState } from "@/logic/GameState";
 import { useState, useRef, useEffect } from "react";
@@ -61,3 +61,4 @@ useEffect(() => {
         getGameSpeed: handleGetGameSpeed
     }
 }
+*/

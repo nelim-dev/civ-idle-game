@@ -1,24 +1,24 @@
 import { GameManager } from "./GameManager";
-
+import { gameManager } from "./GameManager";
+import { useGameStore } from "@/store/gameStore";
 export class GameLoop{
 
 
 private tickMs: number = 100;
 private gameManager: GameManager;
 private intervalID: NodeJS.Timeout | number | undefined;
-private onGameSpeedChange : (()=>void) | undefined;
 private currentSpeed: number = 1;
 private savedSpeed: number = 1;
 private fastForwardRemaining: number | null = null;
 
 
-constructor (tickMs: number|undefined, gameManager: GameManager, onGameSpeedChange : (()=>void)){
+constructor (tickMs: number|undefined, gameManager: GameManager){
     if(tickMs != undefined){
     this.tickMs = tickMs;
     }
     this.gameManager = gameManager;
     this.gameTick();
-    this.onGameSpeedChange = onGameSpeedChange;
+
 }
 
 public setSpeed(speed: number){
@@ -30,7 +30,7 @@ public setSpeed(speed: number){
     }
     this.currentSpeed = speed;
     this.fastForwardRemaining = null;
-    this.onGameSpeedChange?.();
+    useGameStore.setState((state) => ({gameSpeed: speed}));
 }
 
 getSpeed(){
@@ -51,7 +51,7 @@ restoreSpeed(){
 
 private gameTick() {
     this.intervalID = setInterval(() => {
-        this.gameManager.tick();
+       this.gameManager.send("tick");
         if( this.fastForwardRemaining != null){
             this.fastForwardRemaining -= 1;
             if(this.fastForwardRemaining == 0){
@@ -86,3 +86,5 @@ public getTickMS(): number{
 }
 
 }
+
+export const gameLoop = new GameLoop(1000, gameManager);

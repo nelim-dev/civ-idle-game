@@ -1,34 +1,39 @@
 'use client'
 import Image from "next/image";
-import { useGame } from "@/hooks/useGameState";
 import { use } from "react";
-
-
+import { gameManager } from "@/logic/GameManager";
+import { useGameStore } from "@/store/gameStore";
+import { GameLoop } from '@/logic/GameLoop';
+import {gameLoop} from '@/logic/GameLoop'
+import { useRef, useEffect } from "react"; 
 export default function Home() {
 
-  const {state, gameSpeed, click, setGameSpeed, startFastForward} = useGame();
   function Pause(){
-    setGameSpeed(0);
+    gameLoop.setSpeed(0);
   }
   function FirstSpeed(){
-    setGameSpeed(1);
+    gameLoop.setSpeed(1);
   }
   function SecondSpeed(){
-    setGameSpeed(2);
+    gameLoop.setSpeed(2);
   }
   function ThirdSpeed(){
-    setGameSpeed(5);
+    gameLoop.setSpeed(5);
   }
   function ForwardSteps(){
-    startFastForward(100,100);
+    gameLoop.startFastForward(100,100);
   }
+  const coins = useGameStore((state) => state.coins)
+    function sendClick(){
+      gameManager.send("click");
+    }
   return (
     <div className="flex flex-col flex-1 bg-zinc-50 font-sans dark:bg-black">
    <div >
 
     </div>
-      <h1>Монеты: {state.coins}</h1>
-      <button onClick={click}> Клик </button>
+      <h1>Монеты: {coins}</h1>
+      <button onClick={sendClick}> Клик </button>
       <div>
         <button onClick = {Pause}>Пауза</button>
         <button onClick = {FirstSpeed}>х1</button>
