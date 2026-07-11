@@ -1,0 +1,26 @@
+[
+{
+"id": "clicker",
+"name": "Кликер",
+"baseIncome": 1,
+"cost": 10,
+"costMultiplier": 1.15,
+"owned": 0
+},
+{
+"id": "Farm",
+"name": "Ферма",
+"baseIncome": 5,
+"cost": 50,
+"costMultiplier": 1.12,
+"owned": 0
+},
+{
+"id": "Mill",
+"name": "Мельница",
+"baseIncome": 10,
+"cost": 500,
+"costMultiplier": 1.04,
+"owned": 0 
+}
+]

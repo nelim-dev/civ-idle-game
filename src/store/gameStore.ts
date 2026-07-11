@@ -1,14 +1,21 @@
 import { create } from 'zustand';
-
-interface GameState{
-coins: number;
+import { GeneratorData } from '@/logic/services/Economy/Generator';
+export interface GameState{
+gameStep: number;
 gameSpeed: number;
-income: number;
+
+economy: {
+    resources: Record<string,number>;
+    generators: GeneratorData[];
+}
 }
 
 export const useGameStore = create<GameState>((set,get) => ({
-
-coins: 0,
+gameStep: 0,
 gameSpeed: 1,
-income: 1,
+economy: {
+    income: 1,
+    generators: [],
+    resources: {}
+}
 }))

@@ -10,7 +10,7 @@ private intervalID: NodeJS.Timeout | number | undefined;
 private currentSpeed: number = 1;
 private savedSpeed: number = 1;
 private fastForwardRemaining: number | null = null;
-
+private step : number = 0;
 
 constructor (tickMs: number|undefined, gameManager: GameManager){
     if(tickMs != undefined){
@@ -52,7 +52,11 @@ restoreSpeed(){
 private gameTick() {
     this.intervalID = setInterval(() => {
        this.gameManager.send("tick");
-        if( this.fastForwardRemaining != null){
+        this.step = this.step + 1;
+        useGameStore.setState((state) => ({
+            gameStep: this.step
+        }))
+        if( this.fastForwardRemaining != null){ 
             this.fastForwardRemaining -= 1;
             if(this.fastForwardRemaining == 0){
                 this.restoreSpeed();

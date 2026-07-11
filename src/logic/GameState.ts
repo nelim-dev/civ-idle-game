@@ -1,3 +1,3 @@
-export interface GameState{
+/*export interface GameState{
     coins: number;
-}
+}*/

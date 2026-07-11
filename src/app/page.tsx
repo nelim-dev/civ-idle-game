@@ -1,13 +1,12 @@
 'use client'
-import Image from "next/image";
-import { use } from "react";
 import { gameManager } from "@/logic/GameManager";
 import { useGameStore } from "@/store/gameStore";
-import { GameLoop } from '@/logic/GameLoop';
 import {gameLoop} from '@/logic/GameLoop'
-import { useRef, useEffect } from "react"; 
-export default function Home() {
 
+import { GeneratorList } from "@/components/GeneratorList";
+export default function Home() {
+  const money = useGameStore((state) => state.economy.resources.money);
+  const step = useGameStore((state) => state.gameStep);
   function Pause(){
     gameLoop.setSpeed(0);
   }
@@ -23,23 +22,35 @@ export default function Home() {
   function ForwardSteps(){
     gameLoop.startFastForward(100,100);
   }
-  const coins = useGameStore((state) => state.coins)
+
     function sendClick(){
       gameManager.send("click");
     }
+
   return (
     <div className="flex flex-col flex-1 bg-zinc-50 font-sans dark:bg-black">
    <div >
 
     </div>
-      <h1>Монеты: {coins}</h1>
+      <h1>Монеты: {money}</h1>
+      <h1>Шаг: {step}</h1>
       <button onClick={sendClick}> Клик </button>
+      <div className="flex gap-2">
+        <button className="border border-gray-300 p-2.5 m-1.5" onClick = {Pause}>Пауза</button>
+        <button className="border border-gray-300 p-2.5 m-1.5" onClick = {FirstSpeed}>х1</button>
+        <button className="border border-gray-300 p-2.5 m-1.5" onClick = {SecondSpeed}>х2</button>
+        <button className="border border-gray-300 p-2.5 m-1.5" onClick = {ThirdSpeed}>х5</button>
+        <button className="border border-gray-300 p-2.5 m-1.5" onClick = {ForwardSteps}>100 шагов</button>
+      </div>
       <div>
-        <button onClick = {Pause}>Пауза</button>
-        <button onClick = {FirstSpeed}>х1</button>
-        <button onClick = {SecondSpeed}>х2</button>
-        <button onClick = {ThirdSpeed}>х5</button>
-        <button onClick = {ForwardSteps}>100 шагов</button>
+      <div>
+  <h2>Генераторы</h2>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+    <GeneratorList/>
+        </div>
+
+</div>
       </div>
     </div>
   );

@@ -1,13 +1,15 @@
 import { EventBus } from "./EventBus"; 
 import { EconomySystem } from "./services/Economy/EconomySystem";
 import { useGameStore } from "@/store/gameStore";
+import generatorsData from "@/data/generators.json"
+import resourcesData from "@/data/resources.json"
 export class GameManager{
     private static instance: GameManager;
     private eventBus: EventBus;
     private economySystem: EconomySystem;
     private constructor(){
         this.eventBus = new EventBus();
-        this.economySystem = new EconomySystem(this.eventBus, useGameStore);
+        this.economySystem = new EconomySystem(this.eventBus, useGameStore,generatorsData, resourcesData);
     }
 
 
