@@ -5,7 +5,7 @@ gameStep: number;
 gameSpeed: number;
 
 economy: {
-    resources: Record<string,number>;
+    resources: Record<string,string>;
     generators: GeneratorData[];
 }
 }

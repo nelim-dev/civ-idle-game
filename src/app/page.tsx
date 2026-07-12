@@ -4,6 +4,8 @@ import { useGameStore } from "@/store/gameStore";
 import {gameLoop} from '@/logic/GameLoop'
 
 import { GeneratorList } from "@/components/GeneratorList";
+import { SaveButton } from "@/components/SaveButton";
+import { LoadGameButton } from "@/components/LoadGameButton";
 export default function Home() {
   const money = useGameStore((state) => state.economy.resources.money);
   const step = useGameStore((state) => state.gameStep);
@@ -41,12 +43,13 @@ export default function Home() {
         <button className="border border-gray-300 p-2.5 m-1.5" onClick = {SecondSpeed}>х2</button>
         <button className="border border-gray-300 p-2.5 m-1.5" onClick = {ThirdSpeed}>х5</button>
         <button className="border border-gray-300 p-2.5 m-1.5" onClick = {ForwardSteps}>100 шагов</button>
+            <SaveButton/>
+            <LoadGameButton/>
       </div>
       <div>
       <div>
   <h2>Генераторы</h2>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-
     <GeneratorList/>
         </div>
 
