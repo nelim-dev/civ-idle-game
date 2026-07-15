@@ -1,9 +1,8 @@
 import { GameManager } from "./GameManager";
 import { gameManager } from "./GameManager";
 import { useGameStore } from "@/store/gameStore";
+/* Главный игровой цикл. */
 export class GameLoop{
-
-
 private tickMs: number = 100;
 private gameManager: GameManager;
 private intervalID: NodeJS.Timeout | number | undefined;

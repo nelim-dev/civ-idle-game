@@ -4,7 +4,7 @@ import { Generator, GeneratorData } from "./Generator";
 import { GameState } from "@/store/gameStore";
 import Decimal from 'break_infinity.js';
 import { ISaveable } from "@/logic/services/GameSave/Isaveable";
-import { Issue } from "next/dist/build/swc/types";
+
 
 export class EconomySystem implements ISaveable{
     private resources: Record<string, Decimal>;
