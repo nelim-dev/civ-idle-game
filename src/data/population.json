@@ -5,25 +5,28 @@
     "icon": "👨‍🌾",
     "description": "Рабочая. Нужна для работы зданий, потребляют еду и воду. Быстрее растёт при излишках еды,воды и жилья. Умирает при нехватке еды,воды или жилья. Бунтует при долгой смертности",
     "count": "10",
-    "housingRequired": 1,
+    "housingRequired": "1",
     "consumes": {
       "Food": "0.01",
       "Water": "0.01"
     },
     "growth": {
+      "currentGrowth": "0",
       "baseRate": "0.005",
       "foodBonus": "0.005",
       "housingBonus": "0.002",
       "maxGrowthRate": "0.01"
     },
     "mortality": {
+      "currentMortality": "0",
       "baseRate": "0.000",
       "foodPenalty": "0.01",
       "waterPenalty": "0.005",
       "housingPenalty": "0.005",
       "maxMortalityRate": "0.01"
     },
-    "rebellion": { 
+    "rebellion": {
+      "currentRebellion": "0", 
       "threshold": "0.3",
       "foodPenalty": "0.1",
       "housingPenalty": "0.05",

@@ -1,0 +1,25 @@
+export interface Building{
+  "id": string,
+  "name": string,
+  "description": string,
+  "icon": string,
+  "category": string,
+  "produces": Record<string,string>,
+  "consumes": Record<string, string>,
+  "workersRequired": string,
+  "hp": string,
+  "maxHp": string,
+  "decayLevel": string,
+  "decayPerTurn": string,
+  "cost": Record<string,string>,
+  "priority": string,
+  "efficiency": string,
+  "power": string,
+  "level": string,
+  "maxLevel": string,
+  "open": boolean,
+  "storageBonus": Record<string,string>,
+  "housingCapacity": string,
+  "owned": string
+}
+
