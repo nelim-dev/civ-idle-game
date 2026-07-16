@@ -31,7 +31,7 @@ export class SaveManager{
         try {
             const saveData = JSON.parse(saveString);
             this.saveables.forEach(module => {
-                module.deserialize(saveData);
+                module.deserializeForSave(saveData);
             });
         } catch (error) {
             console.error('Failed to load save:', error);

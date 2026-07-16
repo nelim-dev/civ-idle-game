@@ -120,18 +120,30 @@
 "open": true,
 "owner": "player",
 "renewable": false,
-"renewRate": "0" 
+"renewRate": "0"
 },
 {
-  "id": "Money",
-  "name": "Деньги",
-  "description":"",
-  "count": "0",
-  "storage": "1e200",
-  "icon": "🪙",
-  "open": false,
-  "owner": "player",
-  "renewable": false,
-  "renewRate": "0"
+"id": "Money",
+"name": "Деньги",
+"description":"",
+"count": "0",
+"storage": "1e200",
+"icon": "🪙",
+"open": false,
+"owner": "player",
+"renewable": false,
+"renewRate": "0"
+},
+{
+"id": "BuildPower",
+"name": "Строительные мощности",
+"description":"",
+"count": "0",
+"storage": "0",
+"icon": "",
+"open": true,
+"owner": "player",
+"renewable": false,
+"renewRate": "0"
 }
 ]

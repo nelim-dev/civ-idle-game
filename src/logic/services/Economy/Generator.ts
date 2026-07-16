@@ -64,7 +64,7 @@ public getCostMultiplier(): Decimal{
     return this.costMultiplier;
 }
 
-public serialize(): GeneratorData{
+public serializeForStore(): GeneratorData{
     return{
         id: this.id,
         name: this.name,
@@ -88,7 +88,7 @@ public serializeForSave(): Record<string, any>{
     }
 }
 
-public deserialize(data: Record<string, any>): void{
+public deserializeForSave(data: Record<string, any>): void{
     this.id = data.id;
     this.name = data.name;
     this.income = new Decimal(data.income);

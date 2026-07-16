@@ -106,6 +106,7 @@
     "Water": "1"
   },
   "consumes": {
+    "WaterDeposit": "1"
   },
   "workersRequired": "0",
   "hp": "100",
@@ -169,6 +170,7 @@
     "Stone": "2"
   },
   "consumes": {
+    "StoneDeposit": "2"
   },
   "workersRequired": "20",
   "hp": "200",
@@ -200,6 +202,7 @@
     "IronOre": "1"
   },
   "consumes": {
+    "IronOreDeposit": "1"
   },
   "workersRequired": "15",
   "hp": "150",

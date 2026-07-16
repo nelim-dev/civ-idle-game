@@ -71,7 +71,7 @@ export class EconomySystem implements ISaveable{
         }
 
         if(options?.generators !== false){
-            update.generators = this.generators.map(g => g.serialize());
+            update.generators = this.generators.map(g => g.serializeForStore());
         }
 
         this.store.setState({
@@ -90,7 +90,7 @@ export class EconomySystem implements ISaveable{
             }
         }
     }
-    public deserialize(data: Record<string, any>): void{
+    public deserializeForSave(data: Record<string, any>): void{
         const economyData = data.economy;
         if (!economyData) return;
 
@@ -103,7 +103,7 @@ export class EconomySystem implements ISaveable{
         economyData.generators.forEach((savedGen: any) => {
             const existingGen = this.generators.find(g => g.id === savedGen.id);
             if (existingGen) {
-                existingGen.deserialize(savedGen);
+                existingGen.deserializeForSave(savedGen);
             }
         });
         }
