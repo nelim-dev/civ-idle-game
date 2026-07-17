@@ -136,9 +136,17 @@ export class Building implements Building, ISaveable {
         return this.produces;
     }
 
+    public getTotalProduce(): Record<string, Decimal>{
+        return Object.fromEntries(Object.entries(this.produces).map(([key,value])=>([key,value.times(this.owned)])))
+    }
+
     public getConsumes(): Record<string, Decimal>
     {
         return this.consumes;
+    }
+
+    public getTotalConsumes(){
+        return Object.fromEntries(Object.entries(this.consumes).map(([key,value])=>([key,value.times(this.owned)])))
     }
 
     public getWorkersRequired(): Decimal
@@ -164,26 +172,120 @@ export class Building implements Building, ISaveable {
         return this.maxHpSum;
     }
 
-    public getSumBuildHp(): Decimal{
-        return this.hp.times(this.owned);
+    // ─── Константы распределения урона ───────────────────────────────────────
+    // Каждый уровень: [доля зданий, доля общего урона]
+    // Последний уровень получает остаток автоматически.
+    private static readonly DAMAGE_TIERS: { buildingFraction: number; damageFraction: number }[] = [
+        { buildingFraction: 0.001, damageFraction: 0.02 },   // 0.1% зданий ← 2% урона
+        { buildingFraction: 0.009, damageFraction: 0.05 },   // 0.9% зданий ← 5% урона
+        { buildingFraction: 0.09,  damageFraction: 0.08 },   // 9%   зданий ← 8% урона
+        // остальные 90% зданий ← 85% урона (неявно)
+    ];
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Лечение зданий: добавляет к hpSum, пересчитывает среднее hp.
+     * @param healAmount Сколько HP добавить в общий пул.
+     * @returns true если лечение применено.
+     */
+    public addBuildHp(healAmount: Decimal): boolean {
+        if (healAmount.lte(0) || this.owned.lte(0)) return false;
+
+        // Не можем вылечить больше максимума
+        const newHpSum = Decimal.min(this.hpSum.plus(healAmount), this.maxHpSum);
+        this.hpSum = newHpSum;
+        this.hp = this.hpSum.div(this.owned);
+        return true;
     }
 
-    /*public addBuildHp(count: Decimal): boolean {
-        if (count.gt(0)) {
-            this.hp = this.hp.plus(count);
-            return true;
-        }
-        return false;
-    }
-    Переделать функцию.    
-    */
+    /**
+     * Нанесение урона зданиям: вычитает из hpSum, пересчитывает среднее hp.
+     * @param damageAmount Сколько HP вычесть из общего пула.
+     * @returns true если урон применён.
+     */
+    public reduceBuildHp(damageAmount: Decimal): boolean {
+        if (damageAmount.lte(0) || this.owned.lte(0)) return false;
 
-    public removeBuildHp(count: Decimal): boolean {
-        if (count.gt(0)) {
-            this.hp = this.hp.minus(count);
-            return true;
+        // Не можем уйти ниже 0
+        const newHpSum = Decimal.max(this.hpSum.minus(damageAmount), new Decimal(0));
+        this.hpSum = newHpSum;
+        this.hp = this.hpSum.div(this.owned);
+        return true;
+    }
+
+    /**
+     * Распределённый урон: небольшая часть зданий получает непропорционально
+     * большую долю урона. Это вызывает разрушения даже при скромном общем уроне.
+     *
+     * Распределение (настраивается через DAMAGE_TIERS):
+     *   Уровень 0: 0.1% зданий получают 2%  урона
+     *   Уровень 1: 0.9% зданий получают 5%  урона
+     *   Уровень 2: 9%   зданий получают 8%  урона
+     *   Уровень 3: 90%  зданий получают 85% урона (остаток)
+     *
+     * Урон каждого уровня концентрируется на минимальном количестве зданий
+     * (исходя из их индивидуального maxHp), поэтому здания из ранних уровней
+     * чаще полностью уничтожаются.
+     *
+     * @param totalDamage Общий урон для распределения.
+     * @returns Количество полностью уничтоженных зданий (hp достигло 0).
+     */
+    public damageBuild(totalDamage: Decimal): Decimal {
+        if (totalDamage.lte(0) || this.owned.lte(0) || this.hpSum.lte(0)) return new Decimal(0);
+
+        const maxHpPerBuilding = this.maxHp;
+        let remainingDamage = Decimal.min(totalDamage, this.hpSum);
+        let destroyedCount = new Decimal(0);
+
+        // Работаем с копией hpSum, в конце присвоим финальные значения.
+        let currentHpSum = this.hpSum;
+
+        for (let tierIndex = 0; tierIndex < Building.DAMAGE_TIERS.length; tierIndex++) {
+            const tier = Building.DAMAGE_TIERS[tierIndex];
+            const buildingsInTier = Decimal.max(1, this.owned.times(tier.buildingFraction).floor());
+            const damageForTier = totalDamage.times(tier.damageFraction);
+
+            if (damageForTier.lte(0)) continue;
+
+            // Урон уровня не может превысить суммарный maxHp зданий в этом уровне
+            const maxPossibleInTier = maxHpPerBuilding.times(buildingsInTier);
+            const actualDamageInTier = Decimal.min(damageForTier, maxPossibleInTier);
+
+            // Вычитаем из пула
+            currentHpSum = Decimal.max(currentHpSum.minus(actualDamageInTier), new Decimal(0));
+            remainingDamage = remainingDamage.minus(actualDamageInTier);
+
+            // Считаем уничтоженные здания в уровне
+            if (damageForTier.gte(maxPossibleInTier)) {
+                destroyedCount = destroyedCount.plus(buildingsInTier);
+            } else {
+                const destroyedInTier = damageForTier.div(maxHpPerBuilding).floor();
+                destroyedCount = destroyedCount.plus(Decimal.min(destroyedInTier, buildingsInTier));
+            }
+
+            if (currentHpSum.lte(0)) break;
         }
-        return false;
+
+        // Остаток урона применяем к оставшимся зданиям (неявный уровень 90%)
+        if (remainingDamage.gt(0) && currentHpSum.gt(0)) {
+            const remainingBuildings = Decimal.max(0, this.owned.minus(destroyedCount));
+            if (remainingBuildings.gt(0)) {
+                const maxRemainingHp = maxHpPerBuilding.times(remainingBuildings);
+                const actualRemainingDamage = Decimal.min(remainingDamage, maxRemainingHp);
+                currentHpSum = Decimal.max(currentHpSum.minus(actualRemainingDamage), new Decimal(0));
+
+                const destroyedInRemaining = remainingDamage.div(maxHpPerBuilding).floor();
+                destroyedCount = destroyedCount.plus(Decimal.min(destroyedInRemaining, remainingBuildings));
+            }
+        }
+
+        // Применяем финальные значения
+        this.hpSum = currentHpSum;
+        this.maxHpSum = this.maxHpSum.minus(destroyedCount.times(this.maxHp));
+        this.owned = this.owned.minus(destroyedCount);
+        this.hp = this.owned.gt(0) ? this.hpSum.div(this.owned) : new Decimal(0);
+        
+        return destroyedCount;
     }
 
     public getSumBuildMaxHp(): Decimal{
@@ -212,10 +314,147 @@ export class Building implements Building, ISaveable {
     }
 
     public getCost(){
-        
+       return this.cost; 
     }
 
+    public setCost(cost: Record<string,Decimal>){
+        this.cost = cost;
+    }
 
+    public getPriority(){
+        return this.priority;
+    }
+
+    public setPriority(newPriority: Decimal){
+        this.priority = newPriority;
+    }
+
+    public getEfficiency(): Decimal{
+        return this.efficiency;
+    }
+
+    public setEfficiency(newEfficiency: Decimal) {
+        if (newEfficiency.lt(0)) {
+            this.efficiency = new Decimal(0);
+        } else {
+            this.efficiency = newEfficiency;
+        }
+    }
+
+    public getPower(): Decimal{
+        return this.power;
+    }
+
+    public setPower(newPower: Decimal){
+        if(newPower.lt(0)){
+            this.power = new Decimal(0);
+            return;
+        }
+        if(newPower.gt(100)){
+            this.power = new Decimal(100);
+            return;
+        }
+        this.power = newPower;
+    }
+
+    public getLevel(): Decimal{
+        return this.level;
+    }
+
+    public setLevel(newLevel: Decimal){
+        if(newLevel.gt(0)){
+        if(newLevel.lte(this.maxLevel)){
+            this.level = newLevel;
+        }
+    }      
+    }
+
+    public levelUp(){
+        if(this.level.lt(this.maxLevel)){
+            this.level = this.level.plus(1);
+        }
+    }
+
+    public getMaxLevel(): Decimal{
+        return this.maxLevel;
+    }
+
+    public setMaxLevel(newMaxLevel: Decimal){
+        if(newMaxLevel.gt(0)){
+        this.maxLevel =  newMaxLevel;
+        }
+    }
+    
+    public getOpen(): boolean{
+        return this.open;
+    }
+
+    public setOpen(newOpen: boolean){
+        this.open = newOpen;
+    }
+
+    public getStorageBonus(): Record<string,Decimal>{
+        return this.storageBonus;
+    }
+
+    public getTotalStorageBonus(): Record<string,Decimal>{
+        return Object.fromEntries(Object.entries(this.storageBonus).map(([key,value])=>([key,value.times(this.owned)])));
+    }
+
+    public setStorageBonus(newStorageBonus: Record<string,Decimal>){
+        this.storageBonus = newStorageBonus;
+    }
+
+    public getHousingCapacity(): Decimal{
+        return this.housingCapacity;
+    }
+
+    public getTotalHousingCapacity(): Decimal{
+        return this.housingCapacity.times(this.owned);
+    }
+
+    public setHousingCapacity(newHousingCapacity: Decimal){
+        if(newHousingCapacity.gt(0)){
+        this.housingCapacity = newHousingCapacity;
+        }
+    }
+    
+    public getOwned(){
+        return this.owned;
+    }
+
+    public build(count: Decimal){
+        if(count.gt(0)){
+            this.hpSum = this.hpSum.plus(count.times(this.maxHp));
+            this.maxHpSum = this.maxHpSum.plus(count.times(this.maxHp));
+            this.decayLevel = this.decayLevel.times(this.owned).plus(count.times(0)).dividedBy(this.owned.plus(count));
+            this.owned = this.owned.plus(count);
+        }
+    }
+
+public destroy(count: Decimal): void {
+    if (count.lte(0) || this.owned.lte(0)) return;
+    const countToDestroy = Decimal.min(count, this.owned);
+
+    // Если удаляем все здания
+    if (countToDestroy.eq(this.owned)) {
+        this.hpSum = new Decimal(0);
+        this.maxHpSum = new Decimal(0);
+        this.decayLevel = new Decimal(0);
+        this.owned = new Decimal(0);
+        this.hp = new Decimal(0);
+        return;
+    }
+
+    // Вычисляем среднее HP на одно здание
+    const avgHp = this.hpSum.div(this.owned);
+
+    // Уменьшаем hpSum и maxHpSum пропорционально
+    this.hpSum = this.hpSum.minus(countToDestroy.times(avgHp));
+    this.maxHpSum = this.maxHpSum.minus(countToDestroy.times(this.maxHp));
+    this.owned = this.owned.minus(countToDestroy);
+    this.hp = this.hpSum.div(this.owned);
+}
 
 
     serializeForStore(){
