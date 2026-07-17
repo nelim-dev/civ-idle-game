@@ -74,6 +74,8 @@
   "workersRequired": "2",
   "hp": "100",
   "maxHp": "100",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0005",
   "cost": {
@@ -111,6 +113,8 @@
   "workersRequired": "0",
   "hp": "100",
   "maxHp": "100",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0005",
   "cost": {
@@ -142,6 +146,8 @@
   "workersRequired": "0",
   "hp": "40",
   "maxHp": "40",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0001",
   "cost": {
@@ -175,6 +181,8 @@
   "workersRequired": "20",
   "hp": "200",
   "maxHp": "200",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0005",
   "cost": {
@@ -207,6 +215,8 @@
   "workersRequired": "15",
   "hp": "150",
   "maxHp": "150",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0005",
   "cost": {
@@ -241,6 +251,8 @@
   "workersRequired": "5",
   "hp": "100",
   "maxHp": "100",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0005",
   "cost": {
@@ -276,6 +288,8 @@
   "workersRequired": "4",
   "hp": "250",
   "maxHp": "250",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0005",
   "cost": {
@@ -309,6 +323,8 @@
   "workersRequired": "10",
   "hp": "100",
   "maxHp": "100",
+  "hpSum": "0",
+  "maxHpSum": "0",
   "decayLevel": "0",
   "decayPerTurn": "0.0005",
   "cost": {
@@ -341,6 +357,8 @@
   "workersRequired": "0",
   "hp": "1000",
   "maxHp": "1000",
+  "hpSum": "1000",
+  "maxHpSum": "1000",
   "decayLevel": "0",
   "decayPerTurn": "0",
   "cost": {
