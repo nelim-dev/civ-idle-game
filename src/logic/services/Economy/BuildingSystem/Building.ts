@@ -429,6 +429,7 @@ export class Building implements Building, ISaveable {
             this.maxHpSum = this.maxHpSum.plus(count.times(this.maxHp));
             this.decayLevel = this.decayLevel.times(this.owned).plus(count.times(0)).dividedBy(this.owned.plus(count));
             this.owned = this.owned.plus(count);
+            this.hp = this.hpSum.div(this.owned);
         }
     }
 
