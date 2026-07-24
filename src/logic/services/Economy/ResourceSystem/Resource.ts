@@ -85,9 +85,36 @@ export class Resource implements IResource, ISaveable {
         return true
     }
 
-    public pruneResource() {
+    public setResourceCount(count: Decimal): boolean{
+        if(count.lt(0)){
+            return false;
+        }
+        this.count = count;
+        return true;
+    }
+
+    public pruneResource() {//всё что больше лимита складов обрезаем до лимита складов
         if (this.count.gt(this.storage)) {
             this.count = this.storage;
+        }
+    }
+
+    public hasEnough(required: Decimal): boolean{
+        if(this.count.gte(required)){
+            return true
+        }else{
+            return false;
+        }
+    }
+
+    public canAdd(count: Decimal): boolean{
+        if(count.lt(0)){
+            return false;
+        }
+        if(this.count.plus(count).lte(this.storage)){
+            return true;
+        }else{
+            return false;
         }
     }
 
@@ -103,7 +130,7 @@ export class Resource implements IResource, ISaveable {
         return true;
     }
 
-    public reduceStorage(count: Decimal): boolean {
+    public reduceStorage(count: Decimal): boolean {//уменьшаем storage. Если новое значение < 0, то хранилище = 0
         if (count.lt(0)) {
             return false;
         }
@@ -116,11 +143,49 @@ export class Resource implements IResource, ISaveable {
         return true;
     }
 
+    public setStorage(count: Decimal): boolean{
+        if(count.lt(0)){
+            return false;
+        }
+        this.storage = count;
+        return true;
+    }
+
+    public canReduce(count: Decimal):boolean{
+        if(count.lt(0)){
+            return false;
+        }
+        if(this.count.minus(count).gte(new Decimal(0))){
+            return true;
+        }else{
+            return false;
+        }
+    }
     public getStorage(): Decimal {
         return this.storage;
     }
 
-        public getIcon(): string {
+    public isFull(): boolean{
+        if(this.count.gte(this.storage)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public isEmpty(): boolean{
+        if(this.count.eq(0)){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    public getAvailableSpace(): Decimal{
+        return this.storage.minus(this.count);
+    }
+
+    public getIcon(): string {
         return this.icon;
     }
     public getOpenStatus(): boolean {

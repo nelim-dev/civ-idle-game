@@ -108,59 +108,51 @@ export class Building implements Building, ISaveable {
         this.owned = new Decimal(data.owned);
     }
 
-    public getId(): string{
+    public getId(): string {
         return this.id;
     }
 
-    public getName(): string{
+    public getName(): string {
         return this.name;
     }
 
-    public getDescription(): string
-    {
+    public getDescription(): string {
         return this.description;
     }
 
-    public getIcon(): string
-    {
+    public getIcon(): string {
         return this.icon;
     }
 
-    public getCategory(): string
-    {
+    public getCategory(): string {
         return this.category;
     }
 
-    public getProduces(): Record<string, Decimal>
-    {
+    public getProduces(): Record<string, Decimal> {
         return this.produces;
     }
 
-    public getTotalProduce(): Record<string, Decimal>{
-        return Object.fromEntries(Object.entries(this.produces).map(([key,value])=>([key,value.times(this.owned)])))
+    public getTotalProduce(): Record<string, Decimal> {
+        return Object.fromEntries(Object.entries(this.produces).map(([key, value]) => ([key, value.times(this.owned)])))
     }
 
-    public getConsumes(): Record<string, Decimal>
-    {
+    public getConsumes(): Record<string, Decimal> {
         return this.consumes;
     }
 
-    public getTotalConsumes(){
-        return Object.fromEntries(Object.entries(this.consumes).map(([key,value])=>([key,value.times(this.owned)])))
+    public getTotalConsumes() {
+        return Object.fromEntries(Object.entries(this.consumes).map(([key, value]) => ([key, value.times(this.owned)])))
     }
 
-    public getWorkersRequired(): Decimal
-    {
+    public getWorkersRequired(): Decimal {
         return this.workersRequired;
     }
 
-    public getHp(): Decimal
-    {
+    public getHp(): Decimal {
         return this.hp;
     }
 
-    public getMaxHp(): Decimal
-    {
+    public getMaxHp(): Decimal {
         return this.maxHp;
     }
 
@@ -178,7 +170,7 @@ export class Building implements Building, ISaveable {
     private static readonly DAMAGE_TIERS: { buildingFraction: number; damageFraction: number }[] = [
         { buildingFraction: 0.001, damageFraction: 0.02 },   // 0.1% зданий ← 2% урона
         { buildingFraction: 0.009, damageFraction: 0.05 },   // 0.9% зданий ← 5% урона
-        { buildingFraction: 0.09,  damageFraction: 0.08 },   // 9%   зданий ← 8% урона
+        { buildingFraction: 0.09, damageFraction: 0.08 },   // 9%   зданий ← 8% урона
         // остальные 90% зданий ← 85% урона (неявно)
     ];
     // ──────────────────────────────────────────────────────────────────────────
@@ -284,52 +276,52 @@ export class Building implements Building, ISaveable {
         this.maxHpSum = this.maxHpSum.minus(destroyedCount.times(this.maxHp));
         this.owned = this.owned.minus(destroyedCount);
         this.hp = this.owned.gt(0) ? this.hpSum.div(this.owned) : new Decimal(0);
-        
+
         return destroyedCount;
     }
 
-    public getSumBuildMaxHp(): Decimal{
+    public getSumBuildMaxHp(): Decimal {
         return this.maxHp.times(this.owned);
     }
 
-    public getDecayLevel(): Decimal{
+    public getDecayLevel(): Decimal {
         return this.decayLevel;
     }
 
-    public getDecayPerTurn(): Decimal{
+    public getDecayPerTurn(): Decimal {
         return this.decayPerTurn;
     }
 
-    public BuildingDecayTurn(): void{
-        if(this.decayLevel.lt(100)){
+    public BuildingDecayTurn(): void {
+        if (this.decayLevel.lt(100)) {
             const decayLevel = this.decayLevel.plus(this.decayPerTurn);
-            if(decayLevel.gt(100)){
+            if (decayLevel.gt(100)) {
                 this.decayLevel = new Decimal(100);
-            }else{
+            } else {
                 this.decayLevel = decayLevel;
             }
-        }else{
+        } else {
             this.decayLevel = new Decimal(100);
         }
     }
 
-    public getCost(){
-       return this.cost; 
+    public getCost() {
+        return this.cost;
     }
 
-    public setCost(cost: Record<string,Decimal>){
+    public setCost(cost: Record<string, Decimal>) {
         this.cost = cost;
     }
 
-    public getPriority(){
+    public getPriority() {
         return this.priority;
     }
 
-    public setPriority(newPriority: Decimal){
+    public setPriority(newPriority: Decimal) {
         this.priority = newPriority;
     }
 
-    public getEfficiency(): Decimal{
+    public getEfficiency(): Decimal {
         return this.efficiency;
     }
 
@@ -341,90 +333,90 @@ export class Building implements Building, ISaveable {
         }
     }
 
-    public getPower(): Decimal{
+    public getPower(): Decimal {
         return this.power;
     }
 
-    public setPower(newPower: Decimal){
-        if(newPower.lt(0)){
+    public setPower(newPower: Decimal) {
+        if (newPower.lt(0)) {
             this.power = new Decimal(0);
             return;
         }
-        if(newPower.gt(100)){
+        if (newPower.gt(100)) {
             this.power = new Decimal(100);
             return;
         }
         this.power = newPower;
     }
 
-    public getLevel(): Decimal{
+    public getLevel(): Decimal {
         return this.level;
     }
 
-    public setLevel(newLevel: Decimal){
-        if(newLevel.gt(0)){
-        if(newLevel.lte(this.maxLevel)){
-            this.level = newLevel;
+    public setLevel(newLevel: Decimal) {
+        if (newLevel.gt(0)) {
+            if (newLevel.lte(this.maxLevel)) {
+                this.level = newLevel;
+            }
         }
-    }      
     }
 
-    public levelUp(){
-        if(this.level.lt(this.maxLevel)){
+    public levelUp() {
+        if (this.level.lt(this.maxLevel)) {
             this.level = this.level.plus(1);
         }
     }
 
-    public getMaxLevel(): Decimal{
+    public getMaxLevel(): Decimal {
         return this.maxLevel;
     }
 
-    public setMaxLevel(newMaxLevel: Decimal){
-        if(newMaxLevel.gt(0)){
-        this.maxLevel =  newMaxLevel;
+    public setMaxLevel(newMaxLevel: Decimal) {
+        if (newMaxLevel.gt(0)) {
+            this.maxLevel = newMaxLevel;
         }
     }
-    
-    public getOpen(): boolean{
+
+    public getOpen(): boolean {
         return this.open;
     }
 
-    public setOpen(newOpen: boolean){
+    public setOpen(newOpen: boolean) {
         this.open = newOpen;
     }
 
-    public getStorageBonus(): Record<string,Decimal>{
+    public getStorageBonus(): Record<string, Decimal> {
         return this.storageBonus;
     }
 
-    public getTotalStorageBonus(): Record<string,Decimal>{
-        return Object.fromEntries(Object.entries(this.storageBonus).map(([key,value])=>([key,value.times(this.owned)])));
+    public getTotalStorageBonus(): Record<string, Decimal> {
+        return Object.fromEntries(Object.entries(this.storageBonus).map(([key, value]) => ([key, value.times(this.owned)])));
     }
 
-    public setStorageBonus(newStorageBonus: Record<string,Decimal>){
+    public setStorageBonus(newStorageBonus: Record<string, Decimal>) {
         this.storageBonus = newStorageBonus;
     }
 
-    public getHousingCapacity(): Decimal{
+    public getHousingCapacity(): Decimal {
         return this.housingCapacity;
     }
 
-    public getTotalHousingCapacity(): Decimal{
+    public getTotalHousingCapacity(): Decimal {
         return this.housingCapacity.times(this.owned);
     }
 
-    public setHousingCapacity(newHousingCapacity: Decimal){
-        if(newHousingCapacity.gt(0)){
-        this.housingCapacity = newHousingCapacity;
+    public setHousingCapacity(newHousingCapacity: Decimal) {
+        if (newHousingCapacity.gt(0)) {
+            this.housingCapacity = newHousingCapacity;
         }
     }
-    
-    public getOwned(){
+
+    public getOwned() {
         return this.owned;
     }
 
-    public build(count: Decimal){
-        if(count.gt(0)){
+    public build(count: Decimal) {
+        if (count.gt(0)) {
             this.hpSum = this.hpSum.plus(count.times(this.maxHp));
             this.maxHpSum = this.maxHpSum.plus(count.times(this.maxHp));
             this.decayLevel = this.decayLevel.times(this.owned).plus(count.times(0)).dividedBy(this.owned.plus(count));
@@ -433,33 +425,33 @@ export class Building implements Building, ISaveable {
         }
     }
 
-public destroy(count: Decimal): void {
-    if (count.lte(0) || this.owned.lte(0)) return;
-    const countToDestroy = Decimal.min(count, this.owned);
+    public destroy(count: Decimal): void {
+        if (count.lte(0) || this.owned.lte(0)) return;
+        const countToDestroy = Decimal.min(count, this.owned);
 
-    // Если удаляем все здания
-    if (countToDestroy.eq(this.owned)) {
-        this.hpSum = new Decimal(0);
-        this.maxHpSum = new Decimal(0);
-        this.decayLevel = new Decimal(0);
-        this.owned = new Decimal(0);
-        this.hp = new Decimal(0);
-        return;
+        // Если удаляем все здания
+        if (countToDestroy.eq(this.owned)) {
+            this.hpSum = new Decimal(0);
+            this.maxHpSum = new Decimal(0);
+            this.decayLevel = new Decimal(0);
+            this.owned = new Decimal(0);
+            this.hp = new Decimal(0);
+            return;
+        }
+
+        // Вычисляем среднее HP на одно здание
+        const avgHp = this.hpSum.div(this.owned);
+
+        // Уменьшаем hpSum и maxHpSum пропорционально
+        this.hpSum = this.hpSum.minus(countToDestroy.times(avgHp));
+        this.maxHpSum = this.maxHpSum.minus(countToDestroy.times(this.maxHp));
+        this.owned = this.owned.minus(countToDestroy);
+        this.hp = this.hpSum.div(this.owned);
     }
 
-    // Вычисляем среднее HP на одно здание
-    const avgHp = this.hpSum.div(this.owned);
 
-    // Уменьшаем hpSum и maxHpSum пропорционально
-    this.hpSum = this.hpSum.minus(countToDestroy.times(avgHp));
-    this.maxHpSum = this.maxHpSum.minus(countToDestroy.times(this.maxHp));
-    this.owned = this.owned.minus(countToDestroy);
-    this.hp = this.hpSum.div(this.owned);
-}
-
-
-    serializeForStore(){
-                return {
+    serializeForStore() {
+        return {
             id: this.id,
             name: this.name,
             description: this.description,
