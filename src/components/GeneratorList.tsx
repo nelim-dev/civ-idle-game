@@ -1,4 +1,4 @@
-'use client'
+/*'use client'
 import { useGameStore } from "@/store/gameStore";
 import { gameManager } from "@/logic/GameManager";
 import Decimal from 'break_infinity.js';
@@ -26,4 +26,4 @@ export function GeneratorList(){
       ))
       
   )
-}
+}*/

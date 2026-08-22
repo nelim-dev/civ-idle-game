@@ -1,12 +1,20 @@
 import { create } from 'zustand';
-import { GeneratorData } from '@/logic/services/Economy/Generator';
+import { ResourceData } from '@/logic/services/Economy/ResourceSystem/Resource';
+
+interface IBalanceHistoryUI {
+    count: string,
+    income: string,
+    expense: string
+}
+
 export interface GameState{
 gameStep: number;
 gameSpeed: number;
 
 economy: {
-    resources: Record<string,string>;
-    generators: GeneratorData[];
+    resources: Record<string,ResourceData>;
+    balanceHistory: Record<string, IBalanceHistoryUI[]>;
+    balanceHistoryLength: number;
 }
 }
 
@@ -14,8 +22,8 @@ export const useGameStore = create<GameState>((set,get) => ({
 gameStep: 0,
 gameSpeed: 1,
 economy: {
-    income: 1,
-    generators: [],
-    resources: {}
+    resources: {},
+    balanceHistory: {},
+    balanceHistoryLength: 0
 }
 }))

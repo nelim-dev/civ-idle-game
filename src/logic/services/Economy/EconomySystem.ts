@@ -4,74 +4,46 @@ import { Generator, GeneratorData } from "./Generator";
 import { GameState } from "@/store/gameStore";
 import Decimal from 'break_infinity.js';
 import { ISaveable } from "@/logic/services/GameSave/Isaveable";
-
+import { ResourceManager } from "./ResourceSystem/ResourceManager"; 
+import { ResourceData } from "./ResourceSystem/Resource"; 
 
 export class EconomySystem implements ISaveable{
-    private resources: Record<string, Decimal>;
-    private clickSubscriveOff: () => void;
+    private clickSubscribeOff: () => void;
     private tickSubscribeOff: () => void;
     private buildGeneratorOff: () => void;
-    private generators: Generator[];
     private store: typeof useGameStore;
-    constructor(eventBus: EventBus, store: typeof useGameStore, generatorsData: any[], resourcesData: Record<string,string>){
-        this.clickSubscriveOff = eventBus.on("click", this.click);
-        this.tickSubscribeOff = eventBus.on("tick", this.tick);
-        this.buildGeneratorOff = eventBus.on("buildGenerator", this.buildGenerator);
+    private resourcesManager: ResourceManager;
+    constructor(eventBus: EventBus, store: typeof useGameStore, generatorsData: any[], resourcesData: ResourceData[]){
+        this.clickSubscribeOff = eventBus.on("click", this.handleClick);
+        this.tickSubscribeOff = eventBus.on("tick", this.handleTick);
+        this.buildGeneratorOff = eventBus.on("buildGenerator", this.handleBuildGenerator);
         this.store = store;
-        this.generators = generatorsData.map(data => new Generator(data));
-        this.resources = Object.fromEntries(Object.entries(resourcesData).map(([key,value]) => [key, new Decimal(value)]));
-        this.syncStore({ resources: true, generators: true });
+        this.resourcesManager = new ResourceManager(resourcesData);
+        this.syncStore({ resources: true});
 
     }
 
-    private buildGenerator = (payload: {id: string, count?: number}) =>{
-        
-        const generator = this.generators.find(g => g.id === payload.id)
-        if(!generator){
-        console.warn(`Generator with id ${payload.id} not found`);
-        return;
-        }
-
-        if(payload.count){
-            
-            for( let i = 0; i < payload.count; i++){
-                if(this.resources.money.gte(generator.getCost())){
-                    this.resources.money = this.resources.money.minus(generator.getCost());
-                    generator.build();
-
-                }
-            }
-        }else{
-            if(this.resources.money.gte(generator.getCost())){
-            this.resources.money = this.resources.money.minus(generator.getCost());
-            generator.build();
-            }
-        }
-        this.syncStore({resources: true, generators: true});
+    private handleBuildGenerator = (payload: {id: string, count?: number}) =>{
     }
 
 
-    private click = () => {
-        this.resources.money = this.resources.money.plus(1);
-        this.syncStore({resources: true, generators: false});
+    private handleClick = () => {
     }
 
-    private tick = () => {
-        this.generators.forEach(element => {
-            this.resources.money = this.resources.money.plus(element.getIncome());
-        });
-        this.syncStore({resources: true, generators: false});
+    private handleTick = () => {
+        this.resourcesManager.tick();
+        console.log('ResourceManager.tick()');
+        this.syncStore({resources: true});
     }
 
     syncStore(options?: {resources? : boolean, generators?: boolean}){
         const update: Partial<GameState['economy']> = {}
 
-        if(options?.resources !== false){
-            update.resources = Object.fromEntries(Object.entries(this.resources).map(([key,value]) => [key, value.toFixed(2).toString()]));
-        }
-
-        if(options?.generators !== false){
-            update.generators = this.generators.map(g => g.serializeForStore());
+        if (options?.resources !== false) {
+            const data = this.resourcesManager.serializeForStore();
+            update.resources = data.resourcesManager.resources;
+            update.balanceHistory = data.resourcesManager.balanceHistory;
+            update.balanceHistoryLength = Number(data.resourcesManager.balanceHistoryLength);
         }
 
         this.store.setState({
@@ -85,8 +57,7 @@ export class EconomySystem implements ISaveable{
     public serializeForSave(): Record<string, any>{
         return{
             economy:{
-            "resources": Object.fromEntries(Object.entries(this.resources).map(([key,value]) => [key,value.toString()])),
-            "generators": this.generators.map(g => g.serializeForSave())
+            "resourcesManager": this.resourcesManager.serializeForSave()
             }
         }
     }
@@ -94,20 +65,10 @@ export class EconomySystem implements ISaveable{
         const economyData = data.economy;
         if (!economyData) return;
 
-        if (economyData.resources) {
-        this.resources = Object.fromEntries(
-            Object.entries(economyData.resources).map(([key, value]) => [key, new Decimal(value as string)])
-        );
-        }
-        if (economyData.generators) {
-        economyData.generators.forEach((savedGen: any) => {
-            const existingGen = this.generators.find(g => g.id === savedGen.id);
-            if (existingGen) {
-                existingGen.deserializeForSave(savedGen);
-            }
-        });
+        if (economyData.resourcesManager) {
+        this.resourcesManager.deserializeForSave(economyData.resourcesManager);
         }
         // После загрузки синхронизируем Zustand, чтобы UI обновился
-        this.syncStore({ resources: true, generators: true });
+        this.syncStore({ resources: true});
     }
 }

@@ -290,7 +290,7 @@ export class ResourceManager implements ISaveable {
     private RestoreNatureResources() {
         for (const resource of Object.values(this.resources)) {
             if (resource.getRenewable() && resource.getRenewableRate().gt(0)) {
-                resource.addResource(resource.getRenewableRate());
+                resource.addResource(resource.getRenewableRate().times(resource.getResourceCount()));
             }
         }
     }
