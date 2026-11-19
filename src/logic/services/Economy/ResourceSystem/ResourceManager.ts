@@ -1,11 +1,9 @@
 import Decimal from "break_infinity.js"
 import { Resource } from "./Resource"
-import { ResourceData } from "./Resource"
-import { ISaveable } from "../../GameSave/Isaveable";
-import { Economica, Ojuju } from "next/font/google";
-import { umask } from "process";
+import type { ResourceData } from "@/shared/types/Resource"
+import { Saveable } from "../../GameSave/Isaveable";
 
-interface ResourceRequest {
+export interface ResourceRequest {
     // Уникальный идентификатор запроса (для связывания с результатом)
     id: string;
 
@@ -19,11 +17,11 @@ interface ResourceRequest {
     produces: Record<string, Decimal>;
 
     // Дополнительные метаданные (например, id здания, тип юнита)
-    metadata?: any;
+    metadata?: unknown;
 }
 
 
-interface ResourceResult {
+export interface ResourceResult {
     // Ссылка на исходный запрос (по id)
     requestId: string;
 
@@ -37,7 +35,7 @@ interface ResourceResult {
     actualProduces: Record<string, Decimal>;
 
     // Дополнительные метаданные (копируются из запроса)
-    metadata?: any;
+    metadata?: unknown;
 }
 
 interface IBalanceHistory {
@@ -48,7 +46,7 @@ interface IBalanceHistory {
 
 
 
-export class ResourceManager implements ISaveable {
+export class ResourceManager implements Saveable {
     private resources: Record<string, Resource>;
 
     private balanceHistory: Record<string, IBalanceHistory[]> = {};
@@ -278,7 +276,7 @@ export class ResourceManager implements ISaveable {
     public tick(): void {
 
         // 1. Восстановление возобновляемых ресурсов
-        this.RestoreNatureResources();
+        this.restoreNatureResources();
 
         // 2. Обрезка до лимитов
         this.pruneResources();
@@ -287,7 +285,7 @@ export class ResourceManager implements ISaveable {
         this.recordBalanceHistory();
     }
 
-    private RestoreNatureResources() {
+    private restoreNatureResources() {
         for (const resource of Object.values(this.resources)) {
             if (resource.getRenewable() && resource.getRenewableRate().gt(0)) {
                 resource.addResource(resource.getRenewableRate().times(resource.getResourceCount()));

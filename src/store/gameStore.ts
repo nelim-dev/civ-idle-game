@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { ResourceData } from '@/logic/services/Economy/ResourceSystem/Resource';
+import type { ResourceData } from '@/shared/types/Resource';
 
 interface IBalanceHistoryUI {
     count: string,

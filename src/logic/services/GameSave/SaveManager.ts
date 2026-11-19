@@ -1,7 +1,7 @@
-import { ISaveable } from "./Isaveable";
+import { Saveable } from "./Isaveable";
 import { EventBus } from "@/logic/EventBus";
 export class SaveManager{
-    private saveables: ISaveable[] = [];
+    private saveables: Saveable[] = [];
 
     private readonly SAVE_KEY = 'gameSave';
     private saveSubscribeOff: () => void;
@@ -11,7 +11,7 @@ export class SaveManager{
     this.loadSubscribeOff = eventBus.on("loadGame", this.load);
     }
 
-    register(module: ISaveable): void {
+    register(module: Saveable): void {
         this.saveables.push(module);
     }
 

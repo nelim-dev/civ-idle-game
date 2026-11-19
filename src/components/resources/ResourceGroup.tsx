@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ResourceData } from "@/logic/services/Economy/ResourceSystem/Resource";
+import type { ResourceData } from "@/shared/types/Resource";
 import { ResourceItem } from './ResourceItem';
 
 interface ResourceGroupProps {

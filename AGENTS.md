@@ -1,5 +1,246 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# AGENTS.md
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+## Project
+
+Браузерная экономическая игра: Next.js + React + TypeScript + Zustand.
+Главная ценность — **слоистая архитектура**: логика полностью отвязана
+от UI, модули логики общаются через шину событий.
+
+## Architecture
+
+Зависимости идут строго сверху вниз:
+
+    UI (React components, hooks)
+      ↓ читает
+    Store (Zustand) — контейнер UI-состояния
+      ↓ пишется только из bridge
+    Bridge (src/integration/) — единственное место встречи store и logic
+      ↓ подписан на EventBus
+    Logic (GameLoop, GameManager, сервисы) — знает только EventBus + JSON
+
+### Ключевые компоненты
+
+- **EventBus** (`src/logic/EventBus.ts`) — on/off/emit, единственный канал
+  общения между модулями логики.
+- **GameManager** (`src/logic/GameManager.ts`) — оркестратор, фасад для
+  команд снаружи (`send(event, payload)`). Синглтон.
+- **GameLoop** (`src/logic/GameLoop.ts`) — тик, скорость, fast-forward.
+  Синглтон. Запускается явно, не в конструкторе.
+- **EconomySystem** (`src/logic/services/Economy/`) — модуль экономики,
+  подписан на `"tick"` через EventBus. Состоит из подсистем
+  (ResourceSystem, BuildingSystem, PopulationSystem) — они общаются
+  между собой через EventBus, не напрямую.
+- **SaveManager** (`src/logic/services/GameSave/`) — сохранения через EventBus.
+- **store** (`src/store/gameStore.ts`) — Zustand, только данные для UI.
+- **bridge** (`src/integration/storeBridge.ts`) — слушает EventBus, зовёт
+  `serialize()` у логики, пишет в store. Единственное место с `setState`.
+
+### Данные
+
+Статические данные (генераторы, ресурсы, здания, население) — в
+`src/data/*.json`. Логика читает их при инициализации.
+
+## Architectural rules
+
+**Разрешено:**
+- Logic → EventBus (emit/on).
+- Bridge → Logic (`serialize()`) и → Store (`setState`).
+- UI → Store (чтение) и → GameManager/GameLoop (команды).
+
+**Запрещено:**
+- Импортировать `@/store/*` или тип `GameState` внутри `src/logic/**`.
+- Вызывать `useGameStore.setState` где-либо, кроме `src/integration/storeBridge.ts`.
+- Создавать `new GameLoop()` / `new GameManager()` вне синглтон-аксессоров.
+- Создавать `GameLoop` или `GameManager` на top-level модуля
+  (`export const gameLoop = new GameLoop(...)`) — см. раздел Known hazards.
+- Вызывать `setInterval` в конструкторе `GameLoop` — запуск только через
+  явный идемпотентный `start()`.
+- Запускать `setInterval` где-либо, кроме `GameLoop`.
+- Эмитить события с именами, которых нет в bridge или подписчиках.
+
+## Known hazards
+
+### Множественные экземпляры GameLoop / GameManager
+
+Next.js в dev (HMR) и при SSR может выполнить модуль повторно.
+Если `GameLoop` создаётся на top-level или в конструкторе стартует
+`setInterval`, каждый пере-запуск модуля плодит новый интервал; старые
+никто не гасит. На сервере это означает N параллельных тиков,
+N-кратную скорость экономики и раздувание истории баланса.
+
+Защита (обязательна):
+- Синглтоны на `globalThis` (`globalThis.__gameLoop`,
+  `globalThis.__gameManager`), не в скоупе модуля.
+- Доступ через `getGameLoop()` / `getGameManager()`, а не через
+  `export const ... = new ...`.
+- `start()` идемпотентный (StrictMode вызывает `useEffect` дважды).
+- `if (typeof window === "undefined") return;` в начале `start()`.
+- `setInterval` — только внутри `GameLoop`, не в конструкторе.
+
+## Current refactor (IN PROGRESS)
+
+Идёт переезд с «логика пишет в store напрямую» на
+«логика → EventBus → bridge → store». Целевая архитектура выше;
+код ещё не полностью ей соответствует.
+
+План:
+0. Аудит межслойных типов. Найти все `XxxData` / wire-форматы, которые
+   импортируются из `src/logic/**` в `src/store/**` (и, если есть, в
+   `src/components/**`), и перенести их в `src/shared/types/`.
+   `IXxx` (контракты классов) остаются в файлах классов — они не
+   пересекают границы слоёв. `Resource.ts` — эталон: `ResourceData` →
+   `shared/types/Resource.ts`, `IResource` остаётся.
+1. Ввести тип `EconomySnapshot` (в `shared/types/` или в `Economy/`),
+   заменить `syncStore()` на чистую `serialize()`. Мерж со стором уходит
+   из экономики.
+2. Создать `src/integration/storeBridge.ts`, перенести туда мерж и
+   `setState`. Мост подписывается на `"tick"` и зовёт `serialize()`.
+3. Убрать `useGameStore` из `GameLoop` и `GameManager`. `GameLoop`
+   вместо `setState` — `gameManager.send("tick", { step })` и
+   `send("speed:changed", { speed })`.
+4. Сделать `GameLoop`/`GameManager` синглтонами через `globalThis`
+   (`globalThis.__gameLoop`, `globalThis.__gameManager`), чтобы
+   переживать HMR и не плодить `setInterval`.
+5. Убрать `setInterval` из конструктора `GameLoop` → явный идемпотентный
+   `start()`, guard `typeof window === "undefined"`.
+6. Добавить ESLint `no-restricted-imports` для `src/logic/**` —
+   запрет на `@/store/*`.
+7. После рефакторинга — добавить тесты (фреймворк обсудить отдельно).
+
+**Маркеры в коде:** часть кода, связанная со стором, закомментирована
+(например `syncStore` в `EconomySystem`, вызовы `syncStore` после загрузки
+сейва) — это **намеренные маркеры задачи**, а не мусор. Их нельзя просто
+раскомментировать: их нужно переписать в новой форме (в `serialize()` и
+bridge). Не удалять и не восстанавливать как есть без явного запроса.
+
+**Правила работы с рефакторингом:**
+- Один пункт плана = один PR/коммит. Не смешивать.
+- Не менять поведение игры. Только перенос ответственности.
+- Не менять имена событий без явного запроса.
+- Не «оптимизировать» соседний код по пути.
+- После шага — показать список файлов, где ещё остались нарушения
+  (импорты стора, `setState` вне bridge, `new GameLoop` и т.д.).
+
+## Commands
+
+- `npm run dev` — dev-сервер (основной способ проверки)
+- `npm run build` — production build
+- `npm run lint` — ESLint
+
+Тестов пока нет — проверка вручную через dev и `globalThis.__gameLoop`
+в консоли. После рефакторинга планируется добавить тесты.
+
+## Conventions
+
+- TypeScript strict, без `any` в новом коде.
+- Комментарии — по-русски, там где логика не очевидна.
+- Имена событий: `"tick"`, `"speed:changed"`, `"economy:changed"` и т.п.
+  Стиль — `noun:past_tense` или глагол для команд.
+- Классы — PascalCase, файлы классов — PascalCase (имя файла = имя класса).
+- Один класс — один файл.
+### Интерфейсы и сериализация
+
+Интерфейсы, относящиеся к классу, живут в том же файле, над классом.
+«Один класс — один файл» уточняется как «один класс + его интерфейсы —
+один файл».
+
+Два интерфейса у доменной сущности:
+
+- `XxxData` — **форма хранения**: то, что приходит из JSON-данных или
+  сейва. Все числовые поля — `string` (Decimal сериализуется в строку).
+- `IXxx` — **контракт класса**: поля, которые реально есть у экземпляра.
+  Числовые поля — `Decimal`. Класс `implements IXxx`.
+
+Пример: `ResourceData` (string) → `IResource` (Decimal) → `Resource`.
+Конструктор принимает `XxxData`, конвертирует в `Decimal`.
+
+### Эталонные файлы
+Сейчас для аналогичных по типу файлов в качестве эталонных файлов иерархии:
+Resource.ts как отдельный файл объекта
+ResourceManager.ts как файл менеджера какого-то типа объектов
+EconomySystem.ts как файл системы.
+Примечание: файлы хоть эталонные, но пока логика не отвязана от стора всё еще содержат некоторые ошибки в реализации архитектуры. Текущие план рефакторинга и архитектуры важнее этих файлов.
+### Где живут типы
+
+- `XxxData` (wire-формат) → `src/shared/types/`, **если** используется
+  более чем одним слоем (store + logic, или UI + logic, или save + logic).
+  Если тип нужен только внутри `logic/` — остаётся в файле класса.
+- `IXxx` (контракт класса) → **всегда** в файле класса. Он не пересекает
+  границы слоёв.
+- Типы, которые нужны только одному слою, — в этом слое, не в `shared/`.
+  `shared/` — только для того, что реально шарится.
+
+Признак «надо в `shared/`»: `grep "from \"@/logic" src/store/` или
+`grep "from \"@/logic" src/components/` находит этот тип.
+
+### Сериализация: два формата, не путать
+
+Доменная сущность имеет **два независимых** формата сериализации:
+
+- `serializeForStore()` — для UI через store. Числа **отформатированы**
+  для отображения (`toFixed(2)`, `toFixed(6)` и т.п.). Точность здесь
+  не важна, важна читаемость.
+- `serializeForSave(): Record<string, any>` + `deserializeForSave(data)` —
+  для файла сохранения. Числа **lossless** (`toString()`). Точность
+  критична: после загрузки Decimal должен восстановиться ровно таким,
+  каким был.
+
+Нельзя объединять эти методы в один и нельзя использовать
+`serializeForStore` для сохранения — потеряется точность Decimal.
+Нельзя использовать `serializeForSave` для store — UI получит
+неотформатированные числа.
+
+### Saveable
+
+Всё, что участвует в сохранении/загрузке игры, реализует `Saveable`
+(`src/logic/services/GameSave/Isaveable.ts`) — контракт с методами
+`serializeForSave` / `deserializeForSave`. `SaveManager` собирает
+`Saveable`-объекты через регистрацию (`saveManager.register(...)`).
+Новый сервис, который должен сохраняться, — обязан реализовать
+`Saveable` и быть зарегистрирован в `SaveManager`.
+
+
+### Ответственность классов и иерархия модулей
+
+Каждый класс — одна ответственность. Имя класса отражает его роль:
+«Manager» — управляет коллекцией однотипных сущностей, «System» —
+координирует подсистемы в рамках модуля, «без суффикса» — описывает
+одну сущность и её поведение.
+
+Пример иерархии в экономике:
+- `EconomySystem` — координатор модуля экономики, подписан на `"tick"`
+  через EventBus, оркестрирует подсистемы.
+- `ResourceManager` — управляет коллекцией ресурсов (создание, сериализация,
+  агрегаты). Часть `EconomySystem`.
+- `Resource` — поведение одного ресурса (значение, скорость роста,
+  ограничения). Не знает про других ресурсов и про `ResourceManager`.
+
+Правила:
+- Класс не должен знать о «родителе» (кто его создал/держит).
+- Менеджер коллекции не лезет во внутреннюю логику элемента — только
+  хранит и агрегирует.
+- Элемент не зовёт методы менеджера напрямую — либо через свои методы,
+  либо через EventBus (см. Architectural rules).
+- Подсистемы внутри модуля (`ResourceSystem`, `BuildingSystem`,
+  `PopulationSystem`) общаются **через EventBus**, не прямыми вызовами
+  друг друга. Прямой вызов допустим только внутри одной подсистемы
+  (например, `ResourceManager` → `Resource`).
+- Новый класс — сначала определить, к какому уровню иерархии он относится.
+  Если непонятно — спросить, не изобретать третий уровень.
+
+## Don't
+
+- Не добавлять новые зависимости без запроса.
+- Не переименовывать файлы/классы/события «для красоты».
+- Не менять `src/data/*.json`.
+- Не переписывать `EventBus` — он стабилен.
+- Не трогать `next.config.ts`, `tsconfig.json`, `package.json` без запроса.
+- Не генерировать заглушки/TODO вместо реализации — если не уверен, спросить.
+- Не «улучшать» архитектуру за пределами текущего пункта плана.
+
+
+##Примечания
+
+- Generator.ts не актуальный тип. Использовался лишь для проверки теории, не входит в конечное работоспособное приложение и не нуждается в поддержке.
+
+- useGameState.ts устаревший хук, до добавления Zustand

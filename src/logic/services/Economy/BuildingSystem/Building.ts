@@ -1,5 +1,5 @@
 import Decimal from "break_infinity.js"
-import { ISaveable } from "../../GameSave/Isaveable"
+import { Saveable } from "../../GameSave/Isaveable"
 
 export interface BuildingData {
     id: string,
@@ -55,7 +55,7 @@ export interface Building {
     owned: Decimal
 }
 
-export class Building implements Building, ISaveable {
+export class Building implements Building, Saveable {
     id: string;
     name: string;
     description: string;

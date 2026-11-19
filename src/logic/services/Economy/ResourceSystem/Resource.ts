@@ -1,17 +1,6 @@
 import Decimal from "break_infinity.js"
-import { ISaveable } from "../../GameSave/Isaveable";
-export interface ResourceData {
-    id: string,
-    name: string,
-    description: string,
-    count: string,
-    storage: string,
-    icon: string,
-    open: boolean,
-    owner: string,
-    renewable: boolean,
-    renewRate: string
-}
+import { Saveable } from "../../GameSave/Isaveable";
+import type { ResourceData } from "@/shared/types/Resource";
 
 export interface IResource {
     id: string,
@@ -27,7 +16,7 @@ export interface IResource {
 }
 
 
-export class Resource implements IResource, ISaveable {
+export class Resource implements IResource, Saveable {
     id: string;
     name: string;
     description: string;

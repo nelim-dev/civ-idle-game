@@ -1,5 +1,5 @@
 import { useGameStore } from "@/store/gameStore";
-import { ResourceData } from "@/logic/services/Economy/ResourceSystem/Resource";
+import type { ResourceData } from "@/shared/types/Resource";
 import Decimal from "break_infinity.js";
 
 interface ResourceItemProps {

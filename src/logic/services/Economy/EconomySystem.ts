@@ -3,11 +3,11 @@ import { useGameStore } from "@/store/gameStore";
 import { Generator, GeneratorData } from "./Generator";
 import { GameState } from "@/store/gameStore";
 import Decimal from 'break_infinity.js';
-import { ISaveable } from "@/logic/services/GameSave/Isaveable";
+import { Saveable } from "@/logic/services/GameSave/Isaveable";
 import { ResourceManager } from "./ResourceSystem/ResourceManager"; 
-import { ResourceData } from "./ResourceSystem/Resource"; 
+import type { ResourceData } from "@/shared/types/Resource";
 
-export class EconomySystem implements ISaveable{
+export class EconomySystem implements Saveable{
     private clickSubscribeOff: () => void;
     private tickSubscribeOff: () => void;
     private buildGeneratorOff: () => void;
@@ -19,7 +19,7 @@ export class EconomySystem implements ISaveable{
         this.buildGeneratorOff = eventBus.on("buildGenerator", this.handleBuildGenerator);
         this.store = store;
         this.resourcesManager = new ResourceManager(resourcesData);
-        this.syncStore({ resources: true});
+        //this.syncStore({ resources: true});
 
     }
 
@@ -29,13 +29,24 @@ export class EconomySystem implements ISaveable{
 
     private handleClick = () => {
     }
+// нереализованные методы, к будущей реализации для менеджера построек
+    /*handleBuildBuilding(payload: { buildingId: string; count: Decimal }): void
+
+    handleBuildingRepair(payload: { buildingId: string; amount: Decimal }): void
+
+    handleBuildingDestroy(payload: { buildingId: string; count: Decimal }): void
+
+    handleSetBuildingPower(payload: { buildingId: string; power: Decimal }): void
+
+    handleSetBuildingPriority(payload: { buildingId: string; priority: Decimal }): void*/
+    
 
     private handleTick = () => {
         this.resourcesManager.tick();
         console.log('ResourceManager.tick()');
-        this.syncStore({resources: true});
+        //this.syncStore({resources: true});
     }
-
+/*
     syncStore(options?: {resources? : boolean, generators?: boolean}){
         const update: Partial<GameState['economy']> = {}
 
@@ -53,7 +64,7 @@ export class EconomySystem implements ISaveable{
             }
         });
     }
-
+*/
     public serializeForSave(): Record<string, any>{
         return{
             economy:{
@@ -69,6 +80,6 @@ export class EconomySystem implements ISaveable{
         this.resourcesManager.deserializeForSave(economyData.resourcesManager);
         }
         // После загрузки синхронизируем Zustand, чтобы UI обновился
-        this.syncStore({ resources: true});
+        //this.syncStore({ resources: true});
     }
 }
