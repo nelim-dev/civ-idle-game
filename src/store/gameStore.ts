@@ -1,21 +1,11 @@
 import { create } from 'zustand';
-import type { ResourceData } from '@/shared/types/Resource';
-
-interface IBalanceHistoryUI {
-    count: string,
-    income: string,
-    expense: string
-}
+import type { EconomySnapshot } from '@/shared/types/Economy';
 
 export interface GameState{
 gameStep: number;
 gameSpeed: number;
 
-economy: {
-    resources: Record<string,ResourceData>;
-    balanceHistory: Record<string, IBalanceHistoryUI[]>;
-    balanceHistoryLength: number;
-}
+economy: EconomySnapshot;
 }
 
 export const useGameStore = create<GameState>((set,get) => ({
