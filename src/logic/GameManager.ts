@@ -4,8 +4,11 @@ import generatorsData from "@/data/generators.json"
 import resourceData from "@/data/resource.json"
 import { SaveManager } from "./services/GameSave/SaveManager";
 import type { EconomySnapshot } from "@/shared/types/Economy";
+
+declare global {
+    var __gameManager: GameManager | undefined;
+}
 export class GameManager{
-    private static instance: GameManager;
     private eventBus: EventBus;
     private economySystem: EconomySystem;
     private saveManager: SaveManager;
@@ -18,10 +21,10 @@ export class GameManager{
 
 
     static getInstance(){
-         if (!GameManager.instance) {
-            GameManager.instance = new GameManager();
+        if (!globalThis.__gameManager) {
+            globalThis.__gameManager = new GameManager();
         }
-        return GameManager.instance;
+        return globalThis.__gameManager;
     }
 
 
@@ -42,4 +45,6 @@ export class GameManager{
 
 }
 
-export const gameManager = GameManager.getInstance();
+export function getGameManager(): GameManager {
+    return GameManager.getInstance();
+}

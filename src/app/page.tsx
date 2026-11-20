@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 //import { gameManager } from "@/logic/GameManager";
 import { useGameStore } from "@/store/gameStore";
-import { gameLoop } from '@/logic/GameLoop'
+import { getGameLoop } from '@/logic/GameLoop'
 import { ResourcePanel } from "@/components/resources/ResourcePanel";
 
 //import { GeneratorList } from "@/components/GeneratorList";
@@ -12,24 +12,25 @@ import { initStoreBridge } from "@/integration/storeBridge";
 export default function Home() {
   useEffect(() => {
     initStoreBridge();
+    getGameLoop();
   }, []);
 
   //const money = useGameStore((state) => state.economy.resources.money);
   const step = useGameStore((state) => state.gameStep);
   function Pause() {
-    gameLoop.setSpeed(0);
+    getGameLoop().setSpeed(0);
   }
   function FirstSpeed() {
-    gameLoop.setSpeed(1);
+    getGameLoop().setSpeed(1);
   }
   function SecondSpeed() {
-    gameLoop.setSpeed(2);
+    getGameLoop().setSpeed(2);
   }
   function ThirdSpeed() {
-    gameLoop.setSpeed(5);
+    getGameLoop().setSpeed(5);
   }
   function ForwardSteps() {
-    gameLoop.startFastForward(100, 100);
+    getGameLoop().startFastForward(100, 100);
   }
 
   /*   function sendClick(){

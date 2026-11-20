@@ -1,5 +1,9 @@
-import { GameManager } from "./GameManager";
-import { gameManager } from "./GameManager";
+import type { GameManager } from "./GameManager";
+import { getGameManager } from "./GameManager";
+
+declare global {
+    var __gameLoop: GameLoop | undefined;
+}
 /* Главный игровой цикл. */
 export class GameLoop{
 private tickMs: number = 100;
@@ -86,4 +90,9 @@ public getTickMS(): number{
 
 }
 
-export const gameLoop = new GameLoop(1000, gameManager);
+export function getGameLoop(): GameLoop {
+    if (!globalThis.__gameLoop) {
+        globalThis.__gameLoop = new GameLoop(1000, getGameManager());
+    }
+    return globalThis.__gameLoop;
+}

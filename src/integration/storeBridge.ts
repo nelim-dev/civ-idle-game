@@ -1,4 +1,4 @@
-import { gameManager } from "@/logic/GameManager";
+import { getGameManager } from "@/logic/GameManager";
 import { useGameStore } from "@/store/gameStore";
 
 let unsubscribeTick: (() => void) | null = null;
@@ -12,6 +12,8 @@ let unsubscribeSpeed: (() => void) | null = null;
 export function initStoreBridge(): void {
     if (typeof window === "undefined") return;
     if (unsubscribeTick !== null) return;
+
+    const gameManager = getGameManager();
 
     const syncEconomy = () => {
         const snapshot = gameManager.serializeEconomy();
