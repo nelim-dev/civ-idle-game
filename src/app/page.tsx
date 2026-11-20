@@ -12,7 +12,7 @@ import { initStoreBridge } from "@/integration/storeBridge";
 export default function Home() {
   useEffect(() => {
     initStoreBridge();
-    getGameLoop();
+    getGameLoop().start();
   }, []);
 
   //const money = useGameStore((state) => state.economy.resources.money);

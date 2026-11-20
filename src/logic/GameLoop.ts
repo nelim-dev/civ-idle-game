@@ -19,20 +19,28 @@ constructor (tickMs: number|undefined, gameManager: GameManager){
     this.tickMs = tickMs;
     }
     this.gameManager = gameManager;
-    this.gameTick();
-
 }
 
 public setSpeed(speed: number){
 
     if(speed == 0){
-    this.stop();    
+        this.currentSpeed = 0;
+        this.fastForwardRemaining = null;
+        this.stop();
     }else{
+        this.currentSpeed = speed;
         this.setTickMS(1000/speed);
+        this.fastForwardRemaining = null;
+        this.start();
     }
-    this.currentSpeed = speed;
-    this.fastForwardRemaining = null;
     this.gameManager.send("speed:changed", { speed });
+}
+
+public start(): void {
+    if (typeof window === "undefined") return;
+    if (this.intervalID !== undefined) return;
+    if (this.currentSpeed === 0) return;
+    this.gameTick();
 }
 
 getSpeed(){
@@ -77,9 +85,6 @@ private  setTickMS(tickMS: number){
 this.tickMs = tickMS;
 if(this.intervalID!= undefined){
 this.stop();
-}
-
-if( this.intervalID == undefined){
 this.gameTick();
 }
 }
