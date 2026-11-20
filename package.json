@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint ."
   },
   "dependencies": {
     "break_infinity.js": "^2.2.0",
@@ -19,7 +20,9 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/parser": "^8.73.0",
     "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^10.15.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
