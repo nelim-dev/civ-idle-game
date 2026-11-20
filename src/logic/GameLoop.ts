@@ -1,6 +1,5 @@
 import { GameManager } from "./GameManager";
 import { gameManager } from "./GameManager";
-import { useGameStore } from "@/store/gameStore";
 /* Главный игровой цикл. */
 export class GameLoop{
 private tickMs: number = 100;
@@ -29,7 +28,7 @@ public setSpeed(speed: number){
     }
     this.currentSpeed = speed;
     this.fastForwardRemaining = null;
-    useGameStore.setState((state) => ({gameSpeed: speed}));
+    this.gameManager.send("speed:changed", { speed });
 }
 
 getSpeed(){
@@ -50,12 +49,9 @@ restoreSpeed(){
 
 private gameTick() {
     this.intervalID = setInterval(() => {
-       this.gameManager.send("tick");
+        this.gameManager.send("tick", { step: this.step + 1 });
         this.step = this.step + 1;
-        useGameStore.setState((state) => ({
-            gameStep: this.step
-        }))
-        if( this.fastForwardRemaining != null){ 
+        if( this.fastForwardRemaining != null){
             this.fastForwardRemaining -= 1;
             if(this.fastForwardRemaining == 0){
                 this.restoreSpeed();
