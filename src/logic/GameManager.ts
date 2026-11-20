@@ -1,8 +1,9 @@
-import { EventBus } from "./EventBus"; 
+import { EventBus } from "./EventBus";
 import { EconomySystem } from "./services/Economy/EconomySystem";
 import generatorsData from "@/data/generators.json"
 import resourceData from "@/data/resource.json"
 import { SaveManager } from "./services/GameSave/SaveManager";
+import type { EconomySnapshot } from "@/shared/types/Economy";
 export class GameManager{
     private static instance: GameManager;
     private eventBus: EventBus;
@@ -26,6 +27,11 @@ export class GameManager{
 
     send(command:string, payload?:any){
         this.eventBus.emit(command,payload);
+    }
+
+
+    serializeEconomy(): EconomySnapshot{
+        return this.economySystem.serialize();
     }
 
 

@@ -1,4 +1,5 @@
 'use client'
+import { useEffect } from 'react';
 //import { gameManager } from "@/logic/GameManager";
 import { useGameStore } from "@/store/gameStore";
 import { gameLoop } from '@/logic/GameLoop'
@@ -7,7 +8,12 @@ import { ResourcePanel } from "@/components/resources/ResourcePanel";
 //import { GeneratorList } from "@/components/GeneratorList";
 import { SaveButton } from "@/components/SaveButton";
 import { LoadGameButton } from "@/components/LoadGameButton";
+import { initStoreBridge } from "@/integration/storeBridge";
 export default function Home() {
+  useEffect(() => {
+    initStoreBridge();
+  }, []);
+
   //const money = useGameStore((state) => state.economy.resources.money);
   const step = useGameStore((state) => state.gameStep);
   function Pause() {
