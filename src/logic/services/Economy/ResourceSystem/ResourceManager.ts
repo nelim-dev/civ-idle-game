@@ -165,6 +165,14 @@ export class ResourceManager implements Saveable {
                     actualProduces: { ...req.produces },
                     metadata: req.metadata,
                 });
+
+                // Списываем потребление из общего запаса, чтобы следующая
+                // группа приоритетов видела только реальный остаток.
+                for (const [res, amount] of Object.entries(req.consumes)) {
+                    if (available[res] !== undefined) {
+                        available[res] = available[res].minus(amount);
+                    }
+                }
             }
             break;
         }

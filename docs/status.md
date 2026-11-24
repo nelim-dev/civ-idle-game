@@ -18,15 +18,15 @@
 - Архитектурный рефакторинг завершён: логика не импортирует store, есть bridge, `setState` только в нём, `GameLoop`/`GameManager` живут в `globalThis`, запуск цикла явный.
 - Играбельный прототип сейчас — **только ресурсы и тик**: панель ресурсов, скорость, пауза, fast-forward, ручное сохранение/загрузка.
 - Большая часть дизайна v1 не реализована: здания, строительство, население, исследования, эпохи, события, война, полноценные сохранения, Яндекс.Игры.
-- Автотестов пока нет. Есть ESLint и план тестирования в [`plans/testing-strategy.md`](../plans/testing-strategy.md).
-- Ближайший этап — тесты на уже работающие модули: `EventBus`, `GameManager`, `GameLoop`, `ResourceManager`, `Resource`. Остальные механики сначала реализуются, потом покрываются тестами.
+- Автотесты настроены: Vitest 4, 129 тестов + 1 ожидаемо падающий; `src/logic` — 100% statements/lines, `storeBridge` и `SaveManager` — 100%, общее покрытие — 98.03% statements.
+- Ближайший этап — контент-валидация (`id`, ссылки на ресурсы, числовые строки, регистр `BuildPower`, обязательные поля), затем механики зданий и населения.
 
 ## 2. Архитектура и инфраструктура
 
 | Компонент | Статус | Что уже есть | Что осталось |
 |---|---|---|---|
-| EventBus | ✅ | `on`/`off`/`emit`, отписка | тесты |
-| GameLoop | 🟡 | тик 1000 мс на x1, пауза, x2/x5, fast-forward, `start()` идемпотентен, SSR-guard, `globalThis` | порядок фаз хода, сохранение `gameStep`, тесты |
+| EventBus | ✅ | `on`/`off`/`emit`, отписка, тесты | — |
+| GameLoop | 🟡 | тик 1000 мс на x1, пауза, x2/x5, fast-forward, `start()` идемпотентен, SSR-guard, `globalThis`, тесты | порядок фаз хода, сохранение `gameStep` |
 | GameManager | 🟡 | синглтон, фасад `send`, EventBus, `EconomySystem`, `SaveManager` | подключение BuildingSystem и PopulationSystem |
 | EconomySystem | 🟡 | подписан на `tick`, вызывает `ResourceManager.tick`, отдаёт `EconomySnapshot`, сохраняется/загружается | фазы хода, BuildingSystem, PopulationSystem, обработчики команд |
 | ResourceManager | 🟡 | `processRequests`, `applyRequests`, рост renewable, обрезка складов, история баланса | производство зданий, порча, transient-ресурсы, обрезка истории |
@@ -34,10 +34,10 @@
 | Building | 🟡 | поля, `build`/`destroy`, урон, decay | производство с workers/power/efficiency/level, ремонт, поддержание |
 | BuildingManager | ⛔ | сериализация, поля `ConstructionProject` | все методы — заглушки; не создаётся в `GameManager` |
 | PopulationSystem | ⛔ | только интерфейсы `Population`/`GrowthData`/`MortalityData`/`RebellionData` | класс/менеджер, рост, смертность, бунт, рабочие |
-| SaveManager | 🟡 | один слот `gameSave` в `localStorage`, save/load через EventBus | 9 слотов, автосейв, версии, миграции, облако |
-| StoreBridge | 🟡 | `tick`, `speed:changed`, `loadGame` → store | здания, население, исследования; HMR-защита |
+| SaveManager | 🟡 | один слот `gameSave` в `localStorage`, save/load через EventBus, тесты | 9 слотов, автосейв, версии, миграции, облако |
+| StoreBridge | 🟡 | `tick`, `speed:changed`, `loadGame` → store, тесты | здания, население, исследования; HMR-защита |
 | Store | 🟡 | `economy: EconomySnapshot`, `gameStep`, `gameSpeed` | здания, население, исследования, слоты сохранений |
-| ESLint | ✅ | запрет `@/store/*` в `src/logic/**` | тесты |
+| ESLint | ✅ | запрет `@/store/*` в `src/logic/**` | — |
 
 ## 3. Игровые механики v1
 
@@ -153,8 +153,8 @@
 
 | Проверка | Статус | Факт |
 |---|---|---|
-| Unit-тесты | ⛔ | фреймворк не установлен |
-| Integration-тесты | ⛔ | нет |
+| Unit-тесты | ✅ | Vitest 4.1.12, 129 passed + 1 expected fail, `npm run test` |
+| Integration-тесты | ✅ | `storeBridge` и `SaveManager`, 20 тестов; `storeBridge`/`SaveManager` — 100% покрытия |
 | Component-тесты | ⛔ | нет |
 | E2E | ⛔ | нет |
 | ESLint | ✅ | `npm run lint`, запрет store в логике |
@@ -179,8 +179,9 @@
 13. **`EconomySystem`** импортирует `Generator`, `GeneratorData`, `Decimal`, но не использует их.
 14. **`BuildingManager`** не создаётся в `GameManager`; `buildings.json` не импортируется.
 15. **`PopulationSystem`** — только типы, без класса и данных в `GameManager`.
+16. **Приоритетные группы `processRequests`** (исправлено 2026-11-24): при полном удовлетворении группы потребление не вычиталось из общего `available`, поэтому следующая группа приоритетов видела полный запас. Исправлено в `ResourceManager.processGroup`, покрыто тестами приоритетов.
 
-## 10. Первый этап тестирования: уже работающие модули
+## 10. Первый этап тестирования: уже работающие модули ✅
 
 Приоритет 1 — покрыть то, что уже реализовано и работает:
 
@@ -190,11 +191,15 @@
 4. `ResourceManager`: `processRequests` (приоритеты 1 > 2 > ... > 30 > 0), `applyRequests`, текущий `tick`, история баланса, сериализация.
 5. `Resource`: базовые операции, склад, renewable, `serializeForStore` vs `serializeForSave`.
 
-Второй эшелон — после первого набора:
+Покрытие первого этапа: `EventBus` 10 тестов, `Resource` 28, `ResourceManager` 41
+(1 `test.fails` для истории баланса), `GameManager` 12, `GameLoop` 19
+(включая SSR-guard). Тесты лежат рядом с кодом, инфраструктура — в `src/test/`.
 
-- `storeBridge`: `tick` → `gameStep` + экономика, `speed:changed` → `gameSpeed`, `loadGame` → синхронизация.
-- `SaveManager`: round-trip текущего формата, отсутствие сейва, битый JSON.
-- Контент-валидация: уникальные `id`, ссылки на ресурсы, числовые строки, регистр `BuildPower`, обязательные поля.
+Второй эшелон ✅:
+
+- `storeBridge`: `tick` → `gameStep` + экономика, `speed:changed` → `gameSpeed`, `loadGame` → синхронизация, идемпотентность `init`, `dispose`, SSR-guard — 13 тестов.
+- `SaveManager`: round-trip текущего формата, объединение модулей, отсутствие сейва, битый JSON — 7 тестов.
+- Контент-валидация: уникальные `id`, ссылки на ресурсы, числовые строки, регистр `BuildPower`, обязательные поля — следующий шаг.
 
 ## 11. Что пока не тестировать
 
@@ -208,9 +213,9 @@
 
 ## 12. Ближайшие шаги
 
-1. Настроить Vitest (`test`, `test:watch`, `test:coverage`).
-2. Покрыть `EventBus`, `Resource`, `ResourceManager`, `GameManager`, `GameLoop` — это уже работающий код.
-3. Затем покрыть `storeBridge` и `SaveManager`.
+1. ✅ Настроить Vitest (`test`, `test:watch`, `test:coverage`).
+2. ✅ Покрыть `EventBus`, `Resource`, `ResourceManager`, `GameManager`, `GameLoop`.
+3. ✅ Покрыть `storeBridge` и `SaveManager`.
 4. Привести контент к схеме v1: `BuildPower`, `spoilRate`, обязательные поля, `era`, civil war поля.
 5. Реализовать порядок фаз хода и transient-ресурсы в `EconomySystem`/`ResourceManager`.
 6. Реализовать `BuildingManager` и `PopulationSystem`, затем покрыть их тестами.
