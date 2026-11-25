@@ -140,12 +140,15 @@ flowchart LR
 - `GameLoop` — 19 (включая SSR-guard);
 - `storeBridge` — 13;
 - `SaveManager` — 7;
-- контент-валидация — 24.
+- контент-валидация — 24;
+- конец хода `EconomySystem` — косвенно через `ResourceManager`, `GameManager`
+  и `storeBridge`: порча излишков, лимит истории, сброс потоков.
 
 Пока не покрыто:
 
 - `Building`, `BuildingManager`, `PopulationSystem`;
-- порядок фаз с зданиями и населением, transient-ресурсы и `BuildPower` как поток;
+- порядок фаз с зданиями и населением;
+- `BuildPower` как поток и transient-ресурсы (этап 1.2);
 - UI-компоненты;
 - E2E;
 - Yandex SDK, cloud saves, реклама, лидерборды.
