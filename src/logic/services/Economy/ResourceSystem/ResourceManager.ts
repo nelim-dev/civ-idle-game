@@ -3,6 +3,13 @@ import { Resource } from "./Resource"
 import type { ResourceData } from "@/shared/types/Resource"
 import { Saveable } from "../../GameSave/Isaveable";
 
+/**
+ * Ресурсы-потоки (docs/game-design_v1.md §5.5, §18.3): не хранятся на складе,
+ * расходуются в том же ходу и сбрасываются в конце хода. В контенте v1
+ * отдельного поля transient нет, поэтому признак задаётся в логике.
+ */
+const TRANSIENT_RESOURCE_IDS: ReadonlySet<string> = new Set(["BuildPower"]);
+
 export interface ResourceRequest {
     // Уникальный идентификатор запроса (для связывания с результатом)
     id: string;
@@ -284,13 +291,48 @@ export class ResourceManager implements Saveable {
     /**
      * Конец хода. Вызывается из EconomySystem последней фазой хода.
      * Порядок: восстановление природы → порча излишков игрока → обрезка
-     * природных пулов по их вместимости → запись истории баланса.
+     * природных пулов по их вместимости → сброс потоков → запись истории.
      */
     public tick(): void {
         this.restoreNatureResources();
         this.applySpoilage();
         this.pruneNatureResources();
+        this.resetTransientResources();
         this.recordBalanceHistory();
+    }
+
+    private isTransientResource(id: string): boolean {
+        return TRANSIENT_RESOURCE_IDS.has(id);
+    }
+
+    /**
+     * Потоки не переносятся на следующий ход. Сброс выполняется до записи
+     * истории, чтобы история фиксировала итоговое состояние хода.
+     */
+    private resetTransientResources(): void {
+        for (const [id, resource] of Object.entries(this.resources)) {
+            if (this.isTransientResource(id)) {
+                resource.setResourceCount(new Decimal(0));
+            }
+        }
+    }
+
+    /**
+     * Поток не сохраняется, поэтому после загрузки он начинается заново:
+     * количество обнуляется, история потока из сейва не восстанавливается.
+     */
+    private resetTransientStateAfterLoad(): void {
+        for (const [id, resource] of Object.entries(this.resources)) {
+            if (!this.isTransientResource(id)) {
+                continue;
+            }
+            resource.setResourceCount(new Decimal(0));
+            this.balanceHistory[id] = [{
+                count: new Decimal(0),
+                income: new Decimal(0),
+                expense: new Decimal(0)
+            }];
+        }
     }
 
     private restoreNatureResources() {
@@ -303,11 +345,12 @@ export class ResourceManager implements Saveable {
 
     /**
      * Природные пулы не портятся, поэтому излишек игрока теряется постепенно
-     * по spoilRate, а не обрезается до склада сразу.
+     * по spoilRate, а не обрезается до склада сразу. Потоки не являются
+     * запасом и в порче не участвуют — их обнуляет resetTransientResources.
      */
     private applySpoilage(): void {
-        for (const resource of Object.values(this.resources)) {
-            if (resource.getOwner() !== "nature") {
+        for (const [id, resource] of Object.entries(this.resources)) {
+            if (resource.getOwner() !== "nature" && !this.isTransientResource(id)) {
                 resource.spoilExcess();
             }
         }
@@ -607,22 +650,32 @@ export class ResourceManager implements Saveable {
         }
     }
 
+    /**
+     * Lossless-формат для сохранения. Потоки в сейв не попадают: они живут
+     * только внутри текущего хода и не должны восстанавливаться при загрузке.
+     */
     public serializeForSave(): Record<string, any> {
+        const resources = Object.fromEntries(
+            Object.entries(this.resources)
+                .filter(([id]) => !this.isTransientResource(id))
+                .map(([key, value]) => [key, value.serializeForSave()])
+        );
+        const balanceHistory = Object.fromEntries(
+            Object.entries(this.balanceHistory)
+                .filter(([id]) => !this.isTransientResource(id))
+                .map(([key, history]) => [
+                    key,
+                    history.map((element) => ({
+                        count: element.count.toString(),
+                        income: element.income.toString(),
+                        expense: element.expense.toString()
+                    }))
+                ])
+        );
         return {
             "resourcesManager": {
-                "resources": Object.fromEntries(Object.entries(this.resources).map(([key, value]) => [key, value.serializeForSave()])),
-                "balanceHistory": Object.fromEntries(Object.entries(this.balanceHistory).map(([key, history]) =>
-                    [key,
-                        history.map(
-                            (element => ({
-                                count: element.count.toString(),
-                                income: element.income.toString(),
-                                expense: element.expense.toString()
-                            })
-                            ))
-                    ]
-                )
-                ),
+                resources,
+                balanceHistory,
                 "balanceHistoryLength": this.balanceHistoryLength.toString()
             }
         }
@@ -639,6 +692,10 @@ export class ResourceManager implements Saveable {
         if (resourcesManagerData.resources) {
             const resourcesData = resourcesManagerData.resources as Record<string, any>;
             for (const [id, resourceData] of Object.entries(resourcesData)) {
+                // Старые сейвы могли содержать поток: при загрузке он игнорируется.
+                if (this.isTransientResource(id)) {
+                    continue;
+                }
                 const existingRes = this.resources[id];
                 if (existingRes) {
                     existingRes.deserializeForSave(resourceData);
@@ -649,6 +706,9 @@ export class ResourceManager implements Saveable {
         if (resourcesManagerData.balanceHistory) {
             const historyData = resourcesManagerData.balanceHistory as Record<string, any[]>;
             for (const [id, historyArray] of Object.entries(historyData)) {
+                if (this.isTransientResource(id)) {
+                    continue;
+                }
                 this.balanceHistory[id] = historyArray.map((entry: any) => ({
                     count: new Decimal(entry.count),
                     income: new Decimal(entry.income),
@@ -661,5 +721,7 @@ export class ResourceManager implements Saveable {
             this.balanceHistoryLength = Number(resourcesManagerData.balanceHistoryLength);
         }
 
+        // Поток не сохраняется: после загрузки он начинается с нуля.
+        this.resetTransientStateAfterLoad();
     }
 }
