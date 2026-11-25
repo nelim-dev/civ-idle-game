@@ -20,6 +20,9 @@ export function makeResourceData(
         owner: "player",
         renewable: false,
         renewRate: "0",
+        spoilRate: "0.01",
+        era: "1",
+        unlockResearch: null,
         ...rest
     };
 }

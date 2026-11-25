@@ -1,5 +1,5 @@
 [
- {
+  {
     "id": "Peasants",
     "name": "Крестьяне",
     "icon": "👨‍🌾",
@@ -11,14 +11,12 @@
       "Water": "0.01"
     },
     "growth": {
-      "currentGrowth": "0",
       "baseRate": "0.005",
       "foodBonus": "0.005",
       "housingBonus": "0.002",
       "maxGrowthRate": "0.01"
     },
     "mortality": {
-      "currentMortality": "0",
       "baseRate": "0.000",
       "foodPenalty": "0.01",
       "waterPenalty": "0.005",
@@ -26,12 +24,18 @@
       "maxMortalityRate": "0.01"
     },
     "rebellion": {
-      "currentRebellion": "0", 
       "threshold": "0.3",
+      "civilWarThreshold": "0.6",
       "foodPenalty": "0.1",
       "housingPenalty": "0.05",
-      "waterPenalty": "0.05"
+      "waterPenalty": "0.05",
+      "reliefRate": "0.02",
+      "strikeWorkerFactor": "0.7",
+      "civilWarChance": "0.5",
+      "civilWarLoss": "0.3",
+      "civilWarCooldown": "50"
     },
-    "open": true
- }
+    "open": true,
+    "era": "1"
+  }
 ]

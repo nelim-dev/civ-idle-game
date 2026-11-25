@@ -7,18 +7,16 @@ export interface BuildingData {
     description: string,
     icon: string,
     category: string,
+    era?: string,
+    extraction?: boolean,
     produces: Record<string, string>,
     consumes: Record<string, string>,
     workersRequired: string,
     hp: string,
     maxHp: string,
-    hpSum: string,
-    maxHpSum: string,
-    decayLevel: string,
     decayPerTurn: string,
     cost: Record<string, string>,
     priority: string,
-    efficiency: string,
     power: string,
     level: string,
     maxLevel: string,
@@ -34,6 +32,8 @@ export interface Building {
     description: string,
     icon: string,
     category: string,
+    era: Decimal,
+    extraction: boolean,
     produces: Record<string, Decimal>,
     consumes: Record<string, Decimal>,
     workersRequired: Decimal,
@@ -61,6 +61,8 @@ export class Building implements Building, Saveable {
     description: string;
     icon: string;
     category: string;
+    era: Decimal;
+    extraction: boolean;
     produces: Record<string, Decimal>;
     consumes: Record<string, Decimal>;
     workersRequired: Decimal;
@@ -87,18 +89,16 @@ export class Building implements Building, Saveable {
         this.description = data.description;
         this.icon = data.icon;
         this.category = data.category;
+        this.era = new Decimal(data.era ?? "1");
+        this.extraction = data.extraction ?? false;
         this.produces = Object.fromEntries(Object.entries(data.produces).map(([key, value]) => ([key, new Decimal(value)])));
         this.consumes = Object.fromEntries(Object.entries(data.consumes).map(([key, value]) => ([key, new Decimal(value)])));
         this.workersRequired = new Decimal(data.workersRequired);
         this.hp = new Decimal(data.hp);
         this.maxHp = new Decimal(data.maxHp);
-        this.hpSum = new Decimal(data.hpSum);
-        this.maxHpSum = new Decimal(data.maxHpSum);
-        this.decayLevel = new Decimal(data.decayLevel);
         this.decayPerTurn = new Decimal(data.decayPerTurn);
         this.cost = Object.fromEntries(Object.entries(data.cost).map(([key, value]) => ([key, new Decimal(value)])));
         this.priority = new Decimal(data.priority);
-        this.efficiency = new Decimal(data.efficiency);
         this.power = new Decimal(data.power);
         this.level = new Decimal(data.level);
         this.maxLevel = new Decimal(data.maxLevel);
@@ -106,6 +106,13 @@ export class Building implements Building, Saveable {
         this.storageBonus = Object.fromEntries(Object.entries(data.storageBonus).map(([key, value]) => ([key, new Decimal(value)])));
         this.housingCapacity = new Decimal(data.housingCapacity);
         this.owned = new Decimal(data.owned);
+
+        // hpSum, maxHpSum, decayLevel и efficiency — производные значения
+        // состояния. В контенте их нет, поэтому стартовые значения считаются здесь.
+        this.maxHpSum = this.maxHp.times(this.owned);
+        this.hpSum = this.maxHpSum;
+        this.decayLevel = new Decimal(0);
+        this.efficiency = new Decimal(1);
     }
 
     public getId(): string {
@@ -457,6 +464,8 @@ export class Building implements Building, Saveable {
             description: this.description,
             icon: this.icon,
             category: this.category,
+            era: this.era.toFixed(0),
+            extraction: this.extraction,
             produces: Object.fromEntries(Object.entries(this.produces).map(([key, value]) => ([key, value.toFixed(2)]))),
             consumes: Object.fromEntries(Object.entries(this.consumes).map(([key, value]) => ([key, value.toFixed(2)]))),
             workersRequired: this.workersRequired.toFixed(0),
@@ -485,6 +494,8 @@ export class Building implements Building, Saveable {
             description: this.description,
             icon: this.icon,
             category: this.category,
+            era: this.era.toString(),
+            extraction: this.extraction,
             produces: Object.fromEntries(Object.entries(this.produces).map(([key, value]) => ([key, value.toString()]))),
             consumes: Object.fromEntries(Object.entries(this.consumes).map(([key, value]) => ([key, value.toString()]))),
             workersRequired: this.workersRequired.toString(),
@@ -512,6 +523,8 @@ export class Building implements Building, Saveable {
         this.description = data.description;
         this.icon = data.icon;
         this.category = data.category;
+        this.era = new Decimal(data.era ?? "1");
+        this.extraction = data.extraction ?? false;
         this.produces = Object.fromEntries(Object.entries(data.produces).map(([key, value]) => ([key, new Decimal(value as string)])));
         this.consumes = Object.fromEntries(Object.entries(data.consumes).map(([key, value]) => ([key, new Decimal(value as string)])));
         this.workersRequired = new Decimal(data.workersRequired);

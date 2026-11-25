@@ -9,11 +9,11 @@ export interface Population{
     "growth": GrowthData,
     "mortality": MortalityData,
     "rebellion": RebellionData,
-    "open": boolean
+    "open": boolean,
+    "era": string
 }
 
 interface GrowthData{
-      "currentGrowth": string,
       "baseRate": string,
       "foodBonus": string,
       "housingBonus": string,
@@ -21,7 +21,6 @@ interface GrowthData{
 }
 
 interface MortalityData{
-      "currentMortality": string,
       "baseRate": string,
       "foodPenalty": string,
       "waterPenalty": string,
@@ -30,9 +29,14 @@ interface MortalityData{
 }
 
 interface RebellionData{
-      "currentRebellion": string, 
       "threshold": string,
+      "civilWarThreshold": string,
       "foodPenalty": string,
       "housingPenalty": string,
-      "waterPenalty": string
+      "waterPenalty": string,
+      "reliefRate": string,
+      "strikeWorkerFactor": string,
+      "civilWarChance": string,
+      "civilWarLoss": string,
+      "civilWarCooldown": string
 }

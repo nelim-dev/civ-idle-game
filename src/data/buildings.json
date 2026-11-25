@@ -1,384 +1,366 @@
-[{
-  "id": "Sawmill",
-  "name": "Лесопилка",
-  "description": "",
-  "icon": "",
-  "category": "production",
-  "produces": {
-    "Wood": "1"
+[
+  {
+    "id": "Sawmill",
+    "name": "Лесопилка",
+    "description": "",
+    "icon": "",
+    "category": "production",
+    "era": "1",
+    "extraction": true,
+    "produces": {
+      "Wood": "1"
+    },
+    "consumes": {
+      "Tree": "1"
+    },
+    "workersRequired": "6",
+    "hp": "100",
+    "maxHp": "100",
+    "decayPerTurn": "0.001",
+    "cost": {
+      "Wood": "50",
+      "Stone": "20",
+      "BuildPower": "200"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Wood": "50"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "consumes": {
-    "Tree": "1"
-  },
-  "workersRequired": "6",
-  "hp": "100",
-  "maxHp": "100",
-  "decayLevel": "0",
-  "decayPerTurn": "0.001",
-  "cost": {
-    "Wood": "50",
-    "Stone": "20",
-    "buildPower": "200"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Wood": "50"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},{
+  {
     "id": "Granary",
-  "name": "Амбар",
-  "description": "",
-  "icon": "",
-  "category": "storage",
-  "produces": {
+    "name": "Амбар",
+    "description": "",
+    "icon": "",
+    "category": "storage",
+    "era": "1",
+    "extraction": false,
+    "produces": {},
+    "consumes": {},
+    "workersRequired": "2",
+    "hp": "100",
+    "maxHp": "100",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "100",
+      "BuildPower": "300"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Food": "400"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "consumes": {
-  },
-  "workersRequired": "2",
-  "hp": "100",
-  "maxHp": "100",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "100",
-    "buildPower": "300"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Food": "400"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},{
+  {
     "id": "Warehouse",
-  "name": "Склад",
-  "description": "",
-  "icon": "",
-  "category": "storage",
-  "produces": {
+    "name": "Склад",
+    "description": "",
+    "icon": "",
+    "category": "storage",
+    "era": "1",
+    "extraction": false,
+    "produces": {},
+    "consumes": {},
+    "workersRequired": "2",
+    "hp": "100",
+    "maxHp": "100",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "200",
+      "Stone": "50",
+      "BuildPower": "500"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Wood": "200",
+      "Stone": "100",
+      "IronOre": "50",
+      "Iron": "50",
+      "Charcoal": "50"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "consumes": {
-  },
-  "workersRequired": "2",
-  "hp": "100",
-  "maxHp": "100",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "200",
-    "Stone": "50",
-    "buildPower": "500"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Wood": "200",
-    "Stone": "100",
-    "IronOre": "50",
-    "Iron": "50",
-    "Charcoal": "50"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},{
+  {
     "id": "Pit",
-  "name": "Колодец",
-  "description": "",
-  "icon": "",
-  "category": "storage",
-  "produces": {
-    "Water": "1"
+    "name": "Колодец",
+    "description": "",
+    "icon": "",
+    "category": "storage",
+    "era": "1",
+    "extraction": true,
+    "produces": {
+      "Water": "1"
+    },
+    "consumes": {
+      "WaterDeposit": "1"
+    },
+    "workersRequired": "0",
+    "hp": "100",
+    "maxHp": "100",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "30",
+      "Stone": "50",
+      "BuildPower": "200"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Water": "300"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "consumes": {
-    "WaterDeposit": "1"
+  {
+    "id": "Wood-House",
+    "name": "Деревянный дом",
+    "description": "",
+    "icon": "",
+    "category": "housing",
+    "era": "1",
+    "extraction": false,
+    "produces": {},
+    "consumes": {},
+    "workersRequired": "0",
+    "hp": "40",
+    "maxHp": "40",
+    "decayPerTurn": "0.0001",
+    "cost": {
+      "Wood": "100",
+      "BuildPower": "200"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Water": "10",
+      "Food": "10"
+    },
+    "housingCapacity": "10",
+    "owned": "0"
   },
-  "workersRequired": "0",
-  "hp": "100",
-  "maxHp": "100",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "30",
-    "Stone": "50",
-    "buildPower": "200"
+  {
+    "id": "StoneQuarry",
+    "name": "Каменоломня",
+    "description": "",
+    "icon": "",
+    "category": "production",
+    "era": "1",
+    "extraction": true,
+    "produces": {
+      "Stone": "2"
+    },
+    "consumes": {
+      "StoneDeposit": "2"
+    },
+    "workersRequired": "20",
+    "hp": "200",
+    "maxHp": "200",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "500",
+      "BuildPower": "1000"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Stone": "100"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Water": "300"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},{
-  "id": "Wood-House",
-  "name": "Деревянный дом",
-  "description": "",
-  "icon": "",
-  "category": "infrastructure",
-  "produces": {
-  },
-  "consumes": {
-  },
-  "workersRequired": "0",
-  "hp": "40",
-  "maxHp": "40",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0001",
-  "cost": {
-    "Wood": "100",
-    "buildPower": "200"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Water": "10",
-    "Food": "10"
-  },
-  "housingCapacity": "10",
-  "owned": "0"
-},{
-  "id": "StoneQuarry",
-  "name": "Каменоломня",
-  "description": "",
-  "icon": "",
-  "category": "production",
-  "produces": {
-    "Stone": "2"
-  },
-  "consumes": {
-    "StoneDeposit": "2"
-  },
-  "workersRequired": "20",
-  "hp": "200",
-  "maxHp": "200",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "500",
-    "buildPower": "1000"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Stone": "100"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},{
+  {
     "id": "IronMine",
-  "name": "Шахта железа",
-  "description": "",
-  "icon": "",
-  "category": "production",
-  "produces": {
-    "IronOre": "1"
+    "name": "Шахта железа",
+    "description": "",
+    "icon": "",
+    "category": "production",
+    "era": "1",
+    "extraction": true,
+    "produces": {
+      "IronOre": "1"
+    },
+    "consumes": {
+      "IronOreDeposit": "1"
+    },
+    "workersRequired": "15",
+    "hp": "150",
+    "maxHp": "150",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "600",
+      "Stone": "200",
+      "BuildPower": "1000"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "IronOre": "50"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "consumes": {
-    "IronOreDeposit": "1"
+  {
+    "id": "CharcoalBurner",
+    "name": "Углежог",
+    "description": "",
+    "icon": "",
+    "category": "production",
+    "era": "1",
+    "extraction": false,
+    "produces": {
+      "Charcoal": "1"
+    },
+    "consumes": {
+      "Wood": "2"
+    },
+    "workersRequired": "5",
+    "hp": "100",
+    "maxHp": "100",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "100",
+      "Stone": "100",
+      "BuildPower": "400"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Charcoal": "50"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "workersRequired": "15",
-  "hp": "150",
-  "maxHp": "150",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "600",
-    "Stone": "200",
-    "buildPower": "1000"
+  {
+    "id": "IronFurnace",
+    "name": "Плавильная печь железа",
+    "description": "",
+    "icon": "",
+    "category": "production",
+    "era": "1",
+    "extraction": false,
+    "produces": {
+      "Iron": "1"
+    },
+    "consumes": {
+      "Charcoal": "1",
+      "IronOre": "1"
+    },
+    "workersRequired": "4",
+    "hp": "250",
+    "maxHp": "250",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "100",
+      "Stone": "200",
+      "BuildPower": "500"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Iron": "50"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "IronOre": "50"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},
-{
-  "id": "CharcoalBurner",
-  "name": "Углежог",
-  "description": "",
-  "icon": "",
-  "category": "production",
-  "produces": {
-    "Charcoal": "1"
-  },
-  "consumes": {
-    "Wood": "2"
-  },
-  "workersRequired": "5",
-  "hp": "100",
-  "maxHp": "100",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "100",
-    "Stone": "100",
-    "buildPower": "400"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Charcoal": "50"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},
-{
-  "id": "IronFurnace",
-  "name": "Плавильная печь железа",
-  "description": "",
-  "icon": "",
-  "category": "production",
-  "produces": {
-    "Iron": "1"
-  },
-  "consumes": {
-    "Charcoal": "1",
-    "IronOre": "1"
-  },
-  "workersRequired": "4",
-  "hp": "250",
-  "maxHp": "250",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "100",
-    "Stone": "200",
-    "buildPower": "500"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Iron": "50"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},{
+  {
     "id": "Farm",
-  "name": "Ферма",
-  "description": "",
-  "icon": "",
-  "category": "production",
-  "produces": {
-    "Food": "2"
+    "name": "Ферма",
+    "description": "",
+    "icon": "",
+    "category": "production",
+    "era": "1",
+    "extraction": false,
+    "produces": {
+      "Food": "2"
+    },
+    "consumes": {
+      "Water": "1"
+    },
+    "workersRequired": "10",
+    "hp": "100",
+    "maxHp": "100",
+    "decayPerTurn": "0.0005",
+    "cost": {
+      "Wood": "100",
+      "BuildPower": "1000"
+    },
+    "priority": "0",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Food": "50"
+    },
+    "housingCapacity": "0",
+    "owned": "0"
   },
-  "consumes": {
-    "Water": "1"
-  },
-  "workersRequired": "10",
-  "hp": "100",
-  "maxHp": "100",
-  "hpSum": "0",
-  "maxHpSum": "0",
-  "decayLevel": "0",
-  "decayPerTurn": "0.0005",
-  "cost": {
-    "Wood": "100",
-    "buildPower": "1000"
-  },
-  "priority": "0",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Food": "50"
-  },
-  "housingCapacity": "0",
-  "owned": "0"
-},
-{
-  "id": "CentralBase",
-  "name": "Центральная База",
-  "description": "",
-  "icon": "",
-  "category": "infrastructure",
-  "produces": {
-    "buildPower": "20"
-  },
-  "consumes": {
-  },
-  "workersRequired": "0",
-  "hp": "1000",
-  "maxHp": "1000",
-  "hpSum": "1000",
-  "maxHpSum": "1000",
-  "decayLevel": "0",
-  "decayPerTurn": "0",
-  "cost": {
-  },
-  "priority": "1",
-  "efficiency": "100",
-  "power": "100",
-  "level": "1",
-  "maxLevel": "1",
-  "open": true,
-  "storageBonus": {
-    "Food": "1000",
-    "Water": "1000",
-    "Wood": "400",
-    "Stone": "200",
-    "IronOre": "50",
-    "Iron": "50",
-    "Charcoal": "50"
-  },
-  "housingCapacity": "30",
-  "owned": "1"
-}
+  {
+    "id": "CentralBase",
+    "name": "Центральная База",
+    "description": "",
+    "icon": "",
+    "category": "infrastructure",
+    "era": "1",
+    "extraction": false,
+    "produces": {
+      "BuildPower": "20"
+    },
+    "consumes": {},
+    "workersRequired": "0",
+    "hp": "1000",
+    "maxHp": "1000",
+    "decayPerTurn": "0",
+    "cost": {},
+    "priority": "1",
+    "power": "100",
+    "level": "1",
+    "maxLevel": "1",
+    "open": true,
+    "storageBonus": {
+      "Food": "1000",
+      "Water": "1000",
+      "Wood": "400",
+      "Stone": "200",
+      "IronOre": "50",
+      "Iron": "50",
+      "Charcoal": "50"
+    },
+    "housingCapacity": "30",
+    "owned": "1"
+  }
 ]
