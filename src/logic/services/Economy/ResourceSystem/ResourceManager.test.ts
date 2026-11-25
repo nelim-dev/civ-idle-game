@@ -243,7 +243,7 @@ describe("ResourceManager", () => {
             expect(manager.getResourceCount("Wood")?.eq(0)).toBe(true);
         });
 
-        it("не обрезает производство по складу — это делает tick", () => {
+        it("портит излишек производства в конце хода", () => {
             const manager = createManager();
             manager.applyRequests([
                 {
@@ -258,7 +258,7 @@ describe("ResourceManager", () => {
 
             manager.tick();
 
-            expect(manager.getResourceCount("Wood")?.eq(200)).toBe(true);
+            expect(manager.getResourceCount("Wood")?.eq("249.5")).toBe(true);
         });
 
         it("переносит доход и расход в историю следующего tick", () => {
@@ -327,12 +327,41 @@ describe("ResourceManager", () => {
             expect(manager.getResourceCount("Wood")?.eq(100)).toBe(true);
         });
 
-        it("обрезает невозобновляемый ресурс по складу", () => {
+        it("портит излишек невозобновляемого ресурса по spoilRate", () => {
             const manager = createManager({ Wood: { count: "250" } });
 
             manager.tick();
 
-            expect(manager.getResourceCount("Wood")?.eq(200)).toBe(true);
+            expect(manager.getResourceCount("Wood")?.eq("249.5")).toBe(true);
+        });
+
+        it("портит излишек при нулевом складе, а не обрезает сразу", () => {
+            const manager = createManager({
+                Wood: { count: "400", storage: "0", spoilRate: "0.01" }
+            });
+
+            manager.tick();
+
+            expect(manager.getResourceCount("Wood")?.eq(396)).toBe(true);
+        });
+
+        it("при spoilRate = 1 полностью сбрасывает излишек игрока", () => {
+            const manager = createManager({
+                BuildPower: { count: "100", storage: "0", spoilRate: "1" }
+            });
+
+            manager.tick();
+
+            expect(manager.getResourceCount("BuildPower")?.eq(0)).toBe(true);
+        });
+
+        it("записывает в историю количество после порчи", () => {
+            const manager = createManager({ Wood: { count: "250" } });
+
+            manager.tick();
+
+            const history = manager.getBalanceHistory("Wood");
+            expect(history[history.length - 1].count.eq("249.5")).toBe(true);
         });
 
         it("записывает доход, расход и количество в историю и сбрасывает счётчики", () => {
@@ -358,18 +387,19 @@ describe("ResourceManager", () => {
             expect(nextLast.expense.eq(0)).toBe(true);
         });
 
-        test.fails(
-            "balanceHistoryLength = 100 пока не ограничивает историю (docs/status.md §9.10)",
-            () => {
-                const manager = createManager();
+        it("balanceHistoryLength ограничивает историю последними записями", () => {
+            const manager = createManager();
 
-                for (let step = 0; step < 101; step += 1) {
-                    manager.tick();
-                }
-
-                expect(manager.getBalanceHistory("Wood").length).toBeLessThanOrEqual(100);
+            for (let step = 0; step < 101; step += 1) {
+                manager.tick();
             }
-        );
+
+            const history = manager.getBalanceHistory("Wood");
+            expect(history).toHaveLength(100);
+            expect(
+                history[history.length - 1].count.eq(manager.getResourceCount("Wood")!)
+            ).toBe(true);
+        });
     });
 
     describe("история баланса", () => {

@@ -78,15 +78,15 @@
 - раннер — Vitest 4.1.12, окружение по умолчанию `node`;
 - jsdom включается docblock-ом `// @vitest-environment jsdom` только для
   `GameManager` и `GameLoop`;
-- 10 тестовых файлов, 153 passed + 1 expected fail;
+- 10 тестовых файлов, 162 passed;
 - покрытие: `src/logic` — 100% statements/lines, `storeBridge` и `SaveManager` —
-  100%, общее — 98.03% statements.
+  100%, общее — 98.08% statements.
 
 Покрыто:
 
 - `EventBus` — 10 тестов;
-- `Resource` — 28;
-- `ResourceManager` — 41 (включая 1 `test.fails` для лимита истории баланса);
+- `Resource` — 33;
+- `ResourceManager` — 44 (лимит истории баланса реализован, `test.fails` больше нет);
 - `GameManager` — 12;
 - `GameLoop` — 19 (включая SSR-guard);
 - `storeBridge` — 13;
@@ -96,7 +96,7 @@
 Пока не покрыто:
 
 - `Building`, `BuildingManager`, `PopulationSystem`;
-- фазы хода и transient-ресурсы в `EconomySystem`/`ResourceManager`;
+- порядок фаз с зданиями и населением, transient-ресурсы и `BuildPower` как поток;
 - UI-компоненты;
 - E2E;
 - Yandex SDK, cloud saves, реклама, лидерборды.

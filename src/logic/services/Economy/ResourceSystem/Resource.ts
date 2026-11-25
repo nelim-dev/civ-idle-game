@@ -12,7 +12,8 @@ export interface IResource {
     open: boolean,
     owner: string,
     renewable: boolean,
-    renewRate: Decimal
+    renewRate: Decimal,
+    spoilRate: Decimal
 }
 
 
@@ -27,6 +28,7 @@ export class Resource implements IResource, Saveable {
     owner: string;
     renewable: boolean;
     renewRate: Decimal;
+    spoilRate: Decimal;
 
     constructor(data: ResourceData) {
         this.id = data.id;
@@ -39,6 +41,9 @@ export class Resource implements IResource, Saveable {
         this.owner = data.owner;
         this.renewable = data.renewable;
         this.renewRate = new Decimal(data.renewRate);
+        // spoilRate необязателен в wire-формате: старые сейвы и фикстуры
+        // получают документированное значение по умолчанию.
+        this.spoilRate = new Decimal(data.spoilRate ?? "0.01");
     }
 
     public getId(): string {
@@ -86,6 +91,26 @@ export class Resource implements IResource, Saveable {
         if (this.count.gt(this.storage)) {
             this.count = this.storage;
         }
+    }
+
+    public getSpoilRate(): Decimal {
+        return this.spoilRate;
+    }
+
+    /**
+     * Порча излишка сверх склада по формуле дизайна:
+     * excess = max(0, count - storage); lost = excess × spoilRate;
+     * count = count - lost.
+     * @returns Сколько единиц ресурса потеряно за ход.
+     */
+    public spoilExcess(): Decimal {
+        const excess = Decimal.max(this.count.minus(this.storage), new Decimal(0));
+        if (excess.lte(0) || this.spoilRate.lte(0)) {
+            return new Decimal(0);
+        }
+        const lost = excess.times(this.spoilRate);
+        this.count = this.count.minus(lost);
+        return lost;
     }
 
     public hasEnough(required: Decimal): boolean{
@@ -216,7 +241,8 @@ export class Resource implements IResource, Saveable {
             open: this.open,
             owner: this.owner,
             renewable: this.renewable,
-            renewRate: this.renewRate.toFixed(6)
+            renewRate: this.renewRate.toFixed(6),
+            spoilRate: this.spoilRate.toFixed(6)
         }
     }
 
@@ -231,7 +257,8 @@ export class Resource implements IResource, Saveable {
             open: this.open,
             owner: this.owner,
             renewable: this.renewable,
-            renewRate: this.renewRate.toString()
+            renewRate: this.renewRate.toString(),
+            spoilRate: this.spoilRate.toString()
         }
     }
 
@@ -247,6 +274,7 @@ export class Resource implements IResource, Saveable {
         this.owner = data.owner;
         this.renewable = data.renewable;
         this.renewRate = new Decimal(data.renewRate);
+        this.spoilRate = new Decimal(data.spoilRate ?? "0.01");
     }
 
 }

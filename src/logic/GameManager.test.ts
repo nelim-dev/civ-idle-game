@@ -102,7 +102,7 @@ describe("GameManager", () => {
             const snapshot = manager.serializeEconomy();
 
             expect(listener).toHaveBeenCalledWith({ step: 1 });
-            expect(snapshot.resources.Wood.count).toBe("0.00");
+            expect(snapshot.resources.Wood.count).toBe("396.00");
             expect(snapshot.resources.WaterDeposit.count).toBe("800008000.00");
             expect(snapshot.resources.Tree.count).toBe("50000.00");
         });
@@ -127,7 +127,7 @@ describe("GameManager", () => {
 
             manager.send("saveGame");
             manager.send("tick", { step: 1 });
-            expect(manager.serializeEconomy().resources.Wood.count).toBe("0.00");
+            expect(manager.serializeEconomy().resources.Wood.count).toBe("396.00");
 
             manager.send("loadGame");
 

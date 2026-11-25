@@ -1,6 +1,5 @@
 import { EventBus } from "./EventBus";
 import { EconomySystem } from "./services/Economy/EconomySystem";
-import generatorsData from "@/data/generators.json"
 import resourceData from "@/data/resource.json"
 import { SaveManager } from "./services/GameSave/SaveManager";
 import type { EconomySnapshot } from "@/shared/types/Economy";
@@ -14,7 +13,7 @@ export class GameManager{
     private saveManager: SaveManager;
     private constructor(){
         this.eventBus = new EventBus();
-        this.economySystem = new EconomySystem(this.eventBus, generatorsData, resourceData);
+        this.economySystem = new EconomySystem(this.eventBus, resourceData);
         this.saveManager = new SaveManager(this.eventBus);
         this.saveManager.register(this.economySystem);
     }

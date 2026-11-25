@@ -68,7 +68,7 @@ describe("storeBridge", () => {
             const state = useGameStore.getState();
 
             expect(state.gameStep).toBe(7);
-            expect(state.economy.resources.Wood.count).toBe("0.00");
+            expect(state.economy.resources.Wood.count).toBe("396.00");
             expect(state.economy.resources.WaterDeposit.count).toBe("800008000.00");
         });
 
@@ -125,7 +125,7 @@ describe("storeBridge", () => {
             manager.send("saveGame");
             manager.send("tick", { step: 1 });
 
-            expect(useGameStore.getState().economy.resources.Wood.count).toBe("0.00");
+            expect(useGameStore.getState().economy.resources.Wood.count).toBe("396.00");
 
             manager.send("loadGame");
 

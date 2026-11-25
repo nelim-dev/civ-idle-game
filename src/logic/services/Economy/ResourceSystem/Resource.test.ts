@@ -24,7 +24,8 @@ describe("Resource", () => {
                 open: false,
                 owner: "nature",
                 renewable: true,
-                renewRate: "0.001"
+                renewRate: "0.001",
+                spoilRate: "0.05"
             });
 
             expect(resource.getId()).toBe("Wood");
@@ -37,6 +38,13 @@ describe("Resource", () => {
             expect(resource.getResourceCount().eq(100)).toBe(true);
             expect(resource.getStorage().eq(200)).toBe(true);
             expect(resource.getRenewableRate().eq("0.001")).toBe(true);
+            expect(resource.getSpoilRate().eq("0.05")).toBe(true);
+        });
+
+        it("использует spoilRate по умолчанию, если поле не задано", () => {
+            const resource = makeResource({ spoilRate: undefined });
+
+            expect(resource.getSpoilRate().eq("0.01")).toBe(true);
         });
     });
 
@@ -132,6 +140,44 @@ describe("Resource", () => {
             resource.pruneResource();
 
             expect(resource.getResourceCount().eq(0)).toBe(true);
+        });
+    });
+
+    describe("spoilExcess", () => {
+        it("теряет долю излишка сверх склада по spoilRate", () => {
+            const resource = makeResource({ count: "250", storage: "200", spoilRate: "0.01" });
+
+            const lost = resource.spoilExcess();
+
+            expect(lost.eq("0.5")).toBe(true);
+            expect(resource.getResourceCount().eq("249.5")).toBe(true);
+        });
+
+        it("не меняет ресурс в пределах склада", () => {
+            const resource = makeResource({ count: "150", storage: "200", spoilRate: "0.5" });
+
+            const lost = resource.spoilExcess();
+
+            expect(lost.eq(0)).toBe(true);
+            expect(resource.getResourceCount().eq(150)).toBe(true);
+        });
+
+        it("при spoilRate = 1 убирает весь излишек", () => {
+            const resource = makeResource({ count: "400", storage: "0", spoilRate: "1" });
+
+            const lost = resource.spoilExcess();
+
+            expect(lost.eq(400)).toBe(true);
+            expect(resource.getResourceCount().eq(0)).toBe(true);
+        });
+
+        it("при spoilRate = 0 не портит излишек", () => {
+            const resource = makeResource({ count: "250", storage: "200", spoilRate: "0" });
+
+            const lost = resource.spoilExcess();
+
+            expect(lost.eq(0)).toBe(true);
+            expect(resource.getResourceCount().eq(250)).toBe(true);
         });
     });
 
@@ -245,7 +291,8 @@ describe("Resource", () => {
                 open: true,
                 owner: "player",
                 renewable: false,
-                renewRate: "0.001234"
+                renewRate: "0.001234",
+                spoilRate: "0.010000"
             });
         });
 
@@ -272,7 +319,8 @@ describe("Resource", () => {
             const original = makeResource({
                 count: "1.234567890123456789",
                 storage: "9.876543210987654321",
-                renewRate: "0.000000123456789"
+                renewRate: "0.000000123456789",
+                spoilRate: "0.25"
             });
             const restored = makeResource();
 
@@ -281,6 +329,7 @@ describe("Resource", () => {
             expect(restored.getResourceCount().eq(original.getResourceCount())).toBe(true);
             expect(restored.getStorage().eq(original.getStorage())).toBe(true);
             expect(restored.getRenewableRate().eq(original.getRenewableRate())).toBe(true);
+            expect(restored.getSpoilRate().eq(original.getSpoilRate())).toBe(true);
         });
 
         it("deserializeForSave перезаписывает все поля", () => {
@@ -296,7 +345,8 @@ describe("Resource", () => {
                 open: false,
                 owner: "nature",
                 renewable: true,
-                renewRate: "0.01"
+                renewRate: "0.01",
+                spoilRate: "0.03"
             });
 
             expect(resource.getId()).toBe("Stone");
@@ -309,6 +359,7 @@ describe("Resource", () => {
             expect(resource.getResourceCount().eq(42)).toBe(true);
             expect(resource.getStorage().eq(100)).toBe(true);
             expect(resource.getRenewableRate().eq("0.01")).toBe(true);
+            expect(resource.getSpoilRate().eq("0.03")).toBe(true);
         });
     });
 });

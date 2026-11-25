@@ -1,44 +1,36 @@
 import { EventBus } from "@/logic/EventBus";
-import { Generator, GeneratorData } from "./Generator";
-import Decimal from 'break_infinity.js';
 import { Saveable } from "@/logic/services/GameSave/Isaveable";
 import { ResourceManager } from "./ResourceSystem/ResourceManager";
 import type { ResourceData } from "@/shared/types/Resource";
 import type { EconomySnapshot } from "@/shared/types/Economy";
 
 export class EconomySystem implements Saveable{
-    private clickSubscribeOff: () => void;
     private tickSubscribeOff: () => void;
-    private buildGeneratorOff: () => void;
     private resourcesManager: ResourceManager;
-    constructor(eventBus: EventBus, generatorsData: any[], resourcesData: ResourceData[]){
-        this.clickSubscribeOff = eventBus.on("click", this.handleClick);
+    constructor(eventBus: EventBus, resourcesData: ResourceData[]){
         this.tickSubscribeOff = eventBus.on("tick", this.handleTick);
-        this.buildGeneratorOff = eventBus.on("buildGenerator", this.handleBuildGenerator);
         this.resourcesManager = new ResourceManager(resourcesData);
     }
 
-    private handleBuildGenerator = (payload: {id: string, count?: number}) =>{
-    }
-
-
-    private handleClick = () => {
-    }
-// нереализованные методы, к будущей реализации для менеджера построек
-    /*handleBuildBuilding(payload: { buildingId: string; count: Decimal }): void
-
-    handleBuildingRepair(payload: { buildingId: string; amount: Decimal }): void
-
-    handleBuildingDestroy(payload: { buildingId: string; count: Decimal }): void
-
-    handleSetBuildingPower(payload: { buildingId: string; power: Decimal }): void
-
-    handleSetBuildingPriority(payload: { buildingId: string; priority: Decimal }): void*/
-    
-
     private handleTick = () => {
+        this.runTurn();
+    }
+
+    /**
+     * Один ход. Порядок фаз фиксирован дизайном (docs/game-design_v1.md, 4.2):
+     * 1. потребление населения;
+     * 2. производство и потребление зданий;
+     * 3. строительство;
+     * 4. износ и ремонт;
+     * 5. исследования и прочее;
+     * 6. конец хода.
+     *
+     * Фазы 1–5 подключаются вместе с PopulationSystem и BuildingManager.
+     * Сейчас выполняется только конец хода: восстановление природы, порча
+     * излишков, обрезка природных пулов и запись истории баланса.
+     */
+    private runTurn(): void {
         this.resourcesManager.tick();
-        console.log('ResourceManager.tick()');
     }
 
     public serialize(): EconomySnapshot {

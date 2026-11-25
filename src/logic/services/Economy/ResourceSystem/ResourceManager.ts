@@ -281,15 +281,15 @@ export class ResourceManager implements Saveable {
         return true;
     }
 
+    /**
+     * Конец хода. Вызывается из EconomySystem последней фазой хода.
+     * Порядок: восстановление природы → порча излишков игрока → обрезка
+     * природных пулов по их вместимости → запись истории баланса.
+     */
     public tick(): void {
-
-        // 1. Восстановление возобновляемых ресурсов
         this.restoreNatureResources();
-
-        // 2. Обрезка до лимитов
-        this.pruneResources();
-
-        // 3. Запись истории
+        this.applySpoilage();
+        this.pruneNatureResources();
         this.recordBalanceHistory();
     }
 
@@ -301,22 +301,44 @@ export class ResourceManager implements Saveable {
         }
     }
 
+    /**
+     * Природные пулы не портятся, поэтому излишек игрока теряется постепенно
+     * по spoilRate, а не обрезается до склада сразу.
+     */
+    private applySpoilage(): void {
+        for (const resource of Object.values(this.resources)) {
+            if (resource.getOwner() !== "nature") {
+                resource.spoilExcess();
+            }
+        }
+    }
+
     private recordBalanceHistory(): void {
         for (const [id, resource] of Object.entries(this.resources)) {
             const income = this.pendingIncome[id] || new Decimal(0);
             const expense = this.pendingExpense[id] || new Decimal(0);
             const count = resource.getResourceCount();
-            this.balanceHistory[id].push({ count, income, expense });
+            const history = this.balanceHistory[id];
+            history.push({ count, income, expense });
+
+            const maxLength = Math.max(1, this.balanceHistoryLength);
+            if (history.length > maxLength) {
+                history.splice(0, history.length - maxLength);
+            }
+
             this.pendingIncome[id] = new Decimal(0);
             this.pendingExpense[id] = new Decimal(0);
         }
     }
 
-    private pruneResources(): void{
-        for(const [key,resource] of Object.entries(this.resources)){
-            resource.pruneResource();
+    /** Природные пулы не портятся, но не могут превысить свою вместимость. */
+    private pruneNatureResources(): void {
+        for (const resource of Object.values(this.resources)) {
+            if (resource.getOwner() === "nature") {
+                resource.pruneResource();
+            }
         }
-    } 
+    }
 
     addResourceDirectly(id: string, amount: Decimal): boolean{
         const resource = this.resources[id];
