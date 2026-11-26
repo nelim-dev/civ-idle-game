@@ -171,15 +171,11 @@ export class Building implements Building, Saveable {
         return this.maxHpSum;
     }
 
-    // ─── Константы распределения урона ───────────────────────────────────────
-    // Каждый уровень: [доля зданий, доля общего урона]
-    // Последний уровень получает остаток автоматически.
-    private static readonly DAMAGE_TIERS: { buildingFraction: number; damageFraction: number }[] = [
-        { buildingFraction: 0.001, damageFraction: 0.02 },   // 0.1% зданий ← 2% урона
-        { buildingFraction: 0.009, damageFraction: 0.05 },   // 0.9% зданий ← 5% урона
-        { buildingFraction: 0.09, damageFraction: 0.08 },   // 9%   зданий ← 8% урона
-        // остальные 90% зданий ← 85% урона (неявно)
-    ];
+    // ─── Тир-бакеты урона ────────────────────────────────────────────────────
+    // Доли зданий в тирах 0–2; тир 3 получает остаток.
+    private static readonly TIER_BUILDING_SHARES: readonly number[] = [0.001, 0.009, 0.09];
+    // Доли урона для тиров 0–3. Сумма должна быть равна 1.
+    private static readonly TIER_DAMAGE_SHARES: readonly number[] = [0.02, 0.05, 0.13, 0.80];
     // ──────────────────────────────────────────────────────────────────────────
 
     /**
@@ -213,78 +209,77 @@ export class Building implements Building, Saveable {
     }
 
     /**
-     * Распределённый урон: небольшая часть зданий получает непропорционально
-     * большую долю урона. Это вызывает разрушения даже при скромном общем уроне.
+     * Тир-бакеты урона: урон распределяется по четырём тирам от накопленного
+     * `deficit = maxHpSum − hpSum`. Концентрация сохраняется между ходами,
+     * потому что `hpSum` — накопительное состояние.
      *
-     * Распределение (настраивается через DAMAGE_TIERS):
-     *   Уровень 0: 0.1% зданий получают 2%  урона
-     *   Уровень 1: 0.9% зданий получают 5%  урона
-     *   Уровень 2: 9%   зданий получают 8%  урона
-     *   Уровень 3: 90%  зданий получают 85% урона (остаток)
+     * Тиры 0–2: 0.1% / 0.9% / 9% зданий. Тир 3 — остальные 90%.
+     * Доли урона: 2% / 5% / 13% / 80%.
      *
-     * Урон каждого уровня концентрируется на минимальном количестве зданий
-     * (исходя из их индивидуального maxHp), поэтому здания из ранних уровней
-     * чаще полностью уничтожаются.
+     * Тир разрушается целиком, когда его доля урона покрывает его ёмкость
+     * `n_i × maxHp`. Остаток урона разрушенного тира переливается в следующий
+     * тир по порядку 0 → 1 → 2 → 3.
      *
      * @param totalDamage Общий урон для распределения.
-     * @returns Количество полностью уничтоженных зданий (hp достигло 0).
+     * @returns Количество полностью уничтоженных зданий.
      */
     public damageBuild(totalDamage: Decimal): Decimal {
-        if (totalDamage.lte(0) || this.owned.lte(0) || this.hpSum.lte(0)) return new Decimal(0);
-
-        const maxHpPerBuilding = this.maxHp;
-        let remainingDamage = Decimal.min(totalDamage, this.hpSum);
-        let destroyedCount = new Decimal(0);
-
-        // Работаем с копией hpSum, в конце присвоим финальные значения.
-        let currentHpSum = this.hpSum;
-
-        for (let tierIndex = 0; tierIndex < Building.DAMAGE_TIERS.length; tierIndex++) {
-            const tier = Building.DAMAGE_TIERS[tierIndex];
-            const buildingsInTier = Decimal.max(1, this.owned.times(tier.buildingFraction).floor());
-            const damageForTier = totalDamage.times(tier.damageFraction);
-
-            if (damageForTier.lte(0)) continue;
-
-            // Урон уровня не может превысить суммарный maxHp зданий в этом уровне
-            const maxPossibleInTier = maxHpPerBuilding.times(buildingsInTier);
-            const actualDamageInTier = Decimal.min(damageForTier, maxPossibleInTier);
-
-            // Вычитаем из пула
-            currentHpSum = Decimal.max(currentHpSum.minus(actualDamageInTier), new Decimal(0));
-            remainingDamage = remainingDamage.minus(actualDamageInTier);
-
-            // Считаем уничтоженные здания в уровне
-            if (damageForTier.gte(maxPossibleInTier)) {
-                destroyedCount = destroyedCount.plus(buildingsInTier);
-            } else {
-                const destroyedInTier = damageForTier.div(maxHpPerBuilding).floor();
-                destroyedCount = destroyedCount.plus(Decimal.min(destroyedInTier, buildingsInTier));
-            }
-
-            if (currentHpSum.lte(0)) break;
+        if (totalDamage.lte(0) || this.owned.lte(0) || this.hpSum.lte(0)) {
+            return new Decimal(0);
         }
 
-        // Остаток урона применяем к оставшимся зданиям (неявный уровень 90%)
-        if (remainingDamage.gt(0) && currentHpSum.gt(0)) {
-            const remainingBuildings = Decimal.max(0, this.owned.minus(destroyedCount));
-            if (remainingBuildings.gt(0)) {
-                const maxRemainingHp = maxHpPerBuilding.times(remainingBuildings);
-                const actualRemainingDamage = Decimal.min(remainingDamage, maxRemainingHp);
-                currentHpSum = Decimal.max(currentHpSum.minus(actualRemainingDamage), new Decimal(0));
+        const damage = Decimal.min(totalDamage, this.hpSum);
+        this.hpSum = this.hpSum.minus(damage);
 
-                const destroyedInRemaining = remainingDamage.div(maxHpPerBuilding).floor();
-                destroyedCount = destroyedCount.plus(Decimal.min(destroyedInRemaining, remainingBuildings));
+        const deficit = Decimal.max(this.maxHpSum.minus(this.hpSum), new Decimal(0));
+
+        // Размеры тиров: тиры 0–2 — доли от owned, тир 3 — остаток.
+        const counts: Decimal[] = Building.TIER_BUILDING_SHARES.map((share) =>
+            this.owned.times(share).floor()
+        );
+        const assigned = counts.reduce((sum, count) => sum.plus(count), new Decimal(0));
+        counts.push(Decimal.max(this.owned.minus(assigned), new Decimal(0)));
+
+        const capacities = counts.map((count) => count.times(this.maxHp));
+
+        // Первичное распределение по долям урона с ограничением ёмкости.
+        const allocated = Building.TIER_DAMAGE_SHARES.map((share, index) =>
+            Decimal.min(deficit.times(share), capacities[index])
+        );
+
+        // Перелив остатка в следующий тир по порядку 0 → 1 → 2 → 3.
+        let overflow = deficit.minus(
+            allocated.reduce((sum, value) => sum.plus(value), new Decimal(0))
+        );
+        for (let index = 0; index < allocated.length && overflow.gt(0); index++) {
+            const free = capacities[index].minus(allocated[index]);
+            if (free.lte(0)) continue;
+            const added = Decimal.min(overflow, free);
+            allocated[index] = allocated[index].plus(added);
+            overflow = overflow.minus(added);
+        }
+
+        // Тир разрушается целиком, если его ёмкость покрыта уроном.
+        let destroyed = new Decimal(0);
+        for (let index = 0; index < counts.length; index++) {
+            if (counts[index].lte(0)) continue;
+            if (allocated[index].gte(capacities[index])) {
+                destroyed = destroyed.plus(counts[index]);
             }
         }
 
-        // Применяем финальные значения
-        this.hpSum = currentHpSum;
-        this.maxHpSum = this.maxHpSum.minus(destroyedCount.times(this.maxHp));
-        this.owned = this.owned.minus(destroyedCount);
+        // Пул исчерпан — гибнет вся группа.
+        if (this.hpSum.lte(0)) {
+            destroyed = this.owned;
+            this.hpSum = new Decimal(0);
+        }
+
+        destroyed = Decimal.min(destroyed, this.owned);
+        this.owned = Decimal.max(this.owned.minus(destroyed), new Decimal(0));
+        this.maxHpSum = this.owned.times(this.maxHp);
         this.hp = this.owned.gt(0) ? this.hpSum.div(this.owned) : new Decimal(0);
 
-        return destroyedCount;
+        return destroyed;
     }
 
     public getSumBuildMaxHp(): Decimal {
@@ -300,16 +295,9 @@ export class Building implements Building, Saveable {
     }
 
     public BuildingDecayTurn(): void {
-        if (this.decayLevel.lt(100)) {
-            const decayLevel = this.decayLevel.plus(this.decayPerTurn);
-            if (decayLevel.gt(100)) {
-                this.decayLevel = new Decimal(100);
-            } else {
-                this.decayLevel = decayLevel;
-            }
-        } else {
-            this.decayLevel = new Decimal(100);
-        }
+        // Износ может превышать 100%: разрушение по износу обрабатывается
+        // отдельно в фазе износа и ремонта.
+        this.decayLevel = this.decayLevel.plus(this.decayPerTurn);
     }
 
     public getCost() {
