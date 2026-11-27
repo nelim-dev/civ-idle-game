@@ -2,6 +2,19 @@
 
 import { GameManager, getGameManager } from "./GameManager";
 import { resetGameSingletons } from "@/test/helpers/resetGameSingletons";
+import resourceData from "@/data/resource.json";
+import type { ResourceData } from "@/shared/types/Resource";
+
+const RESOURCES = resourceData as ResourceData[];
+
+/** Ожидание берётся из контента, а не фиксируется числом в тесте. */
+function contentResource(id: string): ResourceData {
+    const resource = RESOURCES.find((item) => item.id === id);
+    if (!resource) {
+        throw new Error(`В контенте нет ресурса ${id}`);
+    }
+    return resource;
+}
 
 describe("GameManager", () => {
     beforeEach(() => {
@@ -67,6 +80,9 @@ describe("GameManager", () => {
     describe("serializeEconomy", () => {
         it("возвращает снимок экономики в форме EconomySnapshot", () => {
             const manager = getGameManager();
+            const wood = contentResource("Wood");
+            const waterDeposit = contentResource("WaterDeposit");
+            const money = contentResource("Money");
 
             const snapshot = manager.serializeEconomy();
 
@@ -75,9 +91,15 @@ describe("GameManager", () => {
             expect(snapshot.resources.WaterDeposit).toBeDefined();
             expect(snapshot.resources.BuildPower).toBeDefined();
             expect(snapshot.resources.Money).toBeDefined();
-            expect(snapshot.resources.Wood.count).toBe("400.00");
-            expect(snapshot.resources.WaterDeposit.count).toBe("800000000.00");
-            expect(snapshot.resources.Money.open).toBe(false);
+            // Снимок не расходится с текущим контентом: значения выводятся
+            // из resource.json, а не фиксируются числом в тесте.
+            expect(snapshot.resources.Wood.count).toBe(
+                Number(wood.count).toFixed(2)
+            );
+            expect(snapshot.resources.WaterDeposit.count).toBe(
+                Number(waterDeposit.count).toFixed(2)
+            );
+            expect(snapshot.resources.Money.open).toBe(money.open);
             expect(snapshot.balanceHistory.Wood).toHaveLength(1);
         });
 

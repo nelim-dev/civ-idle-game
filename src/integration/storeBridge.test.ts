@@ -38,10 +38,14 @@ describe("storeBridge", () => {
             initStoreBridge();
 
             const state = useGameStore.getState();
+            const economy = getGameManager().serializeEconomy();
 
-            expect(state.economy.resources.Wood.count).toBe("400.00");
-            expect(state.economy.resources.WaterDeposit.count).toBe("800000000.00");
-            expect(state.economy.balanceHistoryLength).toBe(100);
+            // Store получает ровно тот снимок, который отдаёт логика;
+            // значения контента в ожиданиях не фиксируются.
+            expect(state.economy.resources).toEqual(economy.resources);
+            expect(state.economy.balanceHistoryLength).toBe(
+                economy.balanceHistoryLength
+            );
         });
 
         it("повторный init не подписывается второй раз", () => {
@@ -150,6 +154,7 @@ describe("storeBridge", () => {
     describe("disposeStoreBridge", () => {
         it("отписывает от tick, speed:changed и loadGame", () => {
             initStoreBridge();
+            const economyBeforeDispose = useGameStore.getState().economy;
             disposeStoreBridge();
 
             const manager = getGameManager();
@@ -160,7 +165,8 @@ describe("storeBridge", () => {
 
             expect(state.gameStep).toBe(0);
             expect(state.gameSpeed).toBe(1);
-            expect(state.economy.resources.Wood.count).toBe("400.00");
+            // Store сохраняет последний снимок, полученный до dispose.
+            expect(state.economy).toEqual(economyBeforeDispose);
         });
 
         it("после dispose можно инициализировать снова", () => {
