@@ -8,47 +8,53 @@
 Целевая площадка — Яндекс.Игры, язык — только русский, десктоп-первый интерфейс,
 оффлайн-прогресса нет.
 
-> Проект находится в активной разработке. Играбельный прототип сейчас — это
-> ресурсы и игровой тик; большая часть дизайна v1 ещё не реализована.
-> Актуальный статус — в [`docs/status.md`](docs/status.md).
+> Основная логика игры реализована: ресурсы, здания, население, экономический
+> цикл и сохранение одного слота. Не реализован интерфейс управления зданиями и
+> населением; исследования, эпохи, события, деньги и война пока вне текущего
+> прототипа. Актуальный статус — в [`docs/status.md`](docs/status.md).
 
 ## Статус
 
-Снимок на 2026-11-24.
+Снимок на 2026-11-27.
 
 **Уже работает:**
 
 - игровой цикл: тик 1000 мс на x1, пауза, x2/x5, fast-forward на 100 шагов;
-- ресурсы: склады, возобновляемые природные пулы, история баланса;
+- ресурсы: склады и бонусы складов зданий, возобновляемые природные пулы,
+  порча излишков, transient-поток `BuildPower`, история баланса с лимитом;
 - распределение запросов на ресурсы по приоритетам (`ResourceManager`);
-- ручное сохранение и загрузка в один слот `localStorage`;
+- здания: производство и потребление, рабочие по приоритетам,
+  power/efficiency/level, износ и ремонт, HP и урон, очередь строительства,
+  снос;
+- население: потребление еды и воды, жильё, рост и смертность,
+  бунт/забастовка, гражданская война и поражение, распределение рабочих;
+- ручное сохранение и загрузка в один слот `localStorage` (ресурсы, здания,
+  население);
 - UI: панель ресурсов, номер хода, управление скоростью, save/load;
 - архитектурный каркас: EventBus, GameManager, GameLoop, Store, Bridge;
-- автотесты: Vitest, 129 тестов + 1 ожидаемо падающий, покрытие `src/logic`
-  100% по statements/lines.
+- автотесты: Vitest 4.1.12, 298 зелёных тестов, включая валидацию контента.
 
-**Ещё не реализовано:**
+**Осталось реализовать:**
 
-- здания: производство/потребление, рабочие, power/efficiency/level, ремонт;
-- строительство, очередь проектов и `BuildPower` как поток;
-- население: потребление, рост, смертность, бунт, гражданская война;
-- исследования, эпохи, события, деньги, война;
+- UI зданий, очереди строительства, населения, предупреждений и экран
+  поражения;
+- исследования, эпохи, случайные события, деньги и войну;
 - 9 слотов сохранений, автосейв, версии и миграции;
-- интеграция с Яндекс.Играми (SDK, cloud saves, лидерборды, реклама);
-- полные UI-панели зданий, населения, исследований и сохранений.
+- интеграцию с Яндекс.Играми (SDK, cloud saves, лидерборды, реклама);
+- исправление известных UI-расхождений: `storage = 0` и фильтр `open`.
 
-Подробная таблица по механикам, известные баги и ближайшие шаги —
+Подробная таблица по механикам, известные баги и текущие задачи —
 [`docs/status.md`](docs/status.md).
 
 ## Стек
 
 | Слой | Технологии |
 |---|---|
-| UI | React 19, Next.js 16 (App Router), Tailwind CSS 4, React Compiler |
-| Состояние UI | Zustand 5 |
+| UI | React 19.2.4, Next.js 16.2.10 (App Router), Tailwind CSS 4, React Compiler |
+| Состояние UI | Zustand 5.0.14 |
 | Логика | TypeScript strict, собственный EventBus, `break_infinity.js` (`Decimal`) |
 | Данные | JSON-контент в `src/data`, сохранения в `localStorage` |
-| Тесты | Vitest 4, jsdom, `@vitest/coverage-v8` |
+| Тесты | Vitest 4.1.12, jsdom, `@vitest/coverage-v8` |
 
 ## Быстрый старт
 
@@ -94,7 +100,7 @@ flowchart TD
     Facade -->|events| Bus[EventBus]
     Bus -->|notifies| Bridge[storeBridge]
     Bridge -->|setState| Store
-    Bus --> Services[Logic systems: EconomySystem, SaveManager]
+    Bus --> Services[Logic systems: EconomySystem, BuildingManager, PopulationSystem, SaveManager]
     Services --> Data[Data: JSON content and localStorage saves]
 ```
 
@@ -107,6 +113,8 @@ flowchart TD
   `getGameManager()`, синглтоны живут на `globalThis`;
 - между системами общение идёт только через `EventBus`; внутри одной системы
   менеджеры могут вызывать публичные методы друг друга;
+- `EconomySystem.runTurn` фиксирует порядок фаз; менеджеры не подписываются
+  на `tick` самостоятельно;
 - ресурсы меняет только `ResourceManager` — остальные передают
   `ResourceRequest[]`;
 - UI читает только store и отправляет команды через публичные фасады.
@@ -118,7 +126,10 @@ flowchart TD
 | [`src/logic/EventBus.ts`](src/logic/EventBus.ts) | `on`/`off`/`emit`, единственный канал межсистемного общения |
 | [`src/logic/GameManager.ts`](src/logic/GameManager.ts) | оркестратор и фасад команд `send(event, payload)` |
 | [`src/logic/GameLoop.ts`](src/logic/GameLoop.ts) | тик, скорость, пауза, fast-forward, SSR-guard |
-| [`src/logic/services/Economy/`](src/logic/services/Economy) | экономика: `EconomySystem`, `ResourceSystem`, будущие здания и население |
+| [`src/logic/services/Economy/EconomySystem.ts`](src/logic/services/Economy/EconomySystem.ts) | `runTurn`, порядок фаз, `EconomySnapshot`, сохранение экономики |
+| [`src/logic/services/Economy/ResourceSystem/`](src/logic/services/Economy/ResourceSystem) | `ResourceManager`: единственный владелец ресурсов, запросы, склады, порча, transient-потоки |
+| [`src/logic/services/Economy/BuildingSystem/`](src/logic/services/Economy/BuildingSystem) | `BuildingManager`: производство, рабочие, износ, ремонт, строительство, урон |
+| [`src/logic/services/Economy/PopulationSystem/`](src/logic/services/Economy/PopulationSystem) | `PopulationSystem`: потребление, демография, бунт, гражданская война |
 | [`src/logic/services/GameSave/`](src/logic/services/GameSave) | сохранения через контракт `Saveable` |
 | [`src/store/gameStore.ts`](src/store/gameStore.ts) | Zustand-состояние для UI |
 | [`src/integration/storeBridge.ts`](src/integration/storeBridge.ts) | EventBus → `serialize()` → store |
@@ -131,18 +142,21 @@ flowchart TD
 src/
   app/            # Next.js App Router: layout, page, глобальные стили
   components/     # UI: панель ресурсов, кнопки сохранения и загрузки
-  data/           # статический контент игры, только чтение
+  data/           # контент v1; generators.json и resources.json — легаси
   hooks/          # легаси-хуки, не используются в v1
   integration/    # storeBridge и его тесты
   logic/          # EventBus, GameLoop, GameManager, сервисы
     services/
-      Economy/    # EconomySystem, ResourceSystem, BuildingSystem, PopulationSystem
-      GameSave/   # SaveManager и контракт Saveable
+      Economy/
+        EconomySystem.ts
+        ResourceSystem/   # Resource, ResourceManager
+        BuildingSystem/   # Building, BuildingManager
+        PopulationSystem/ # PopulationSystem
+      GameSave/           # SaveManager и контракт Saveable
   shared/types/   # общие типы слоёв
   store/          # Zustand store
   test/           # setup, helpers, fixtures для тестов
-docs/             # дизайн, архитектура, статус, журнал решений
-plans/            # стратегия тестирования и планы этапов
+docs/             # дизайн, архитектура, статус, парадигма тестов, решения
 ```
 
 ## Документация
@@ -152,8 +166,8 @@ plans/            # стратегия тестирования и планы э
 | [`docs/game-design_v1.md`](docs/game-design_v1.md) | правила игры, формулы, механики, схема контента — источник истины для поведения |
 | [`docs/architecture.md`](docs/architecture.md) | слои, ответственность модулей, контракты, инварианты |
 | [`docs/status.md`](docs/status.md) | что реализовано, что заглушка, известные расхождения |
+| [`docs/testing.md`](docs/testing.md) | парадигма тестирования, уровни, границы слоёв |
 | [`docs/decisions.md`](docs/decisions.md) | журнал архитектурных и геймдизайн-решений |
-| [`plans/testing-strategy.md`](plans/testing-strategy.md) | уровни тестов, стек, порядок покрытия |
 | [`AGENTS.md`](AGENTS.md) | правила работы с репозиторием для разработчиков и агентов |
 
 Если документы противоречат друг другу, конфликт фиксируется и уточняется, а не
@@ -166,6 +180,13 @@ plans/            # стратегия тестирования и планы э
 (setup, helpers, fixtures). Ожидаемое поведение берётся из дизайн-документа, а
 не из текущей реализации.
 
+Снимок на 2026-11-27: 298 зелёных тестов. Покрыты unit-тесты логики,
+интеграция bridge и сохранений, валидация контента. Component- и E2E-тесты
+ещё не реализованы.
+
+Новое поведение разрабатывается по TDD: тесты → красная стадия → заморозка
+тестов → реализация. Замороженные тесты не меняются без явного разрешения.
+
 ```bash
 npm run test
 npm run test:coverage
@@ -173,8 +194,7 @@ npm run test:coverage
 
 Известный баг оформляется как `test.fails` с комментарием и ссылкой на
 [`docs/status.md`](docs/status.md); после исправления тест становится обычным.
-Уровни тестирования и планы по E2E и Yandex SDK — в
-[`plans/testing-strategy.md`](plans/testing-strategy.md).
+Уровни тестирования и TDD-границы — в [`docs/testing.md`](docs/testing.md).
 
 ## Известные проблемы
 
@@ -184,19 +204,27 @@ npm run test:coverage
   вместимость;
 - закрытые ресурсы не фильтруются по `open`, `Money` виден игроку;
 - сейв имеет двойную вложенность `economy.resourcesManager.resourcesManager`;
-- история баланса растёт без ограничения;
+- сохранение до первого тика не учитывает бонусы складов зданий, после
+  загрузки склад не восстанавливается;
+- bridge идемпотентен в рамках модуля, но при HMR возможна повторная подписка;
+- комментарий в `ResourceRequest` говорит «0 — самый высокий», хотя код и
+  дизайн трактуют `0` как самый низкий приоритет;
+- тест порчи использует `BuildPower` и после перехода на transient-поток
+  проверяет сброс потока, а не порчу излишков;
 - `Generator`, `generators.json`, `resources.json` и `useGameState` — легаси
   кликер-прототипа, в v1 не входят.
 
 ## Ближайшие шаги
 
-1. Привести контент к схеме v1: `BuildPower`, `spoilRate`, `era`, обязательные
-   поля зданий и населения.
-2. Реализовать порядок фаз хода и transient-ресурсы.
-3. Реализовать `BuildingManager` и `PopulationSystem`, покрыть их тестами.
-4. Сделать 9 слотов сохранений, автосейв, версии и миграции.
-5. Добавить UI зданий, населения, исследований и сохранений.
-6. Подключить Yandex SDK через адаптер и cloud saves.
+1. **UI MVP.** Панели зданий, очереди строительства, населения и
+   предупреждений; экран поражения; исправление `storage = 0` и фильтра
+   `open`; компонентные тесты.
+2. **Сохранения MVP.** Полное состояние игры в слоте, версия и миграции,
+   устранение двойной вложенности, автосейв.
+3. **Yandex SDK.** Сбор требований платформы, адаптер, lifecycle и cloud
+   saves; SDK не импортируется в `src/logic/**`.
+4. **После MVP.** 9 слотов и панель сохранений, исследования, эпохи, события,
+   деньги и война.
 
 ## Разработка
 
