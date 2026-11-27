@@ -96,15 +96,49 @@ describe("GameManager", () => {
             const manager = getGameManager();
             const listener = vi.fn();
             manager.getEventBus().on("tick", listener);
+            const before = manager.serializeEconomy();
 
             manager.send("tick", { step: 1 });
 
             const snapshot = manager.serializeEconomy();
 
             expect(listener).toHaveBeenCalledWith({ step: 1 });
-            expect(snapshot.resources.Wood.count).toBe("396.00");
-            expect(snapshot.resources.WaterDeposit.count).toBe("800008000.00");
-            expect(snapshot.resources.Tree.count).toBe("50000.00");
+
+            // Интеграция: GameManager передал buildings.json в EconomySystem.
+            expect(snapshot.buildings?.CentralBase?.owned).toBe("1");
+            expect(snapshot.constructionProjects).toEqual([]);
+
+            // Ожидания не привязаны к числу стартовых складов. Проверяется
+            // правило дизайна (docs/game-design_v1.md §5.4): портится только
+            // излишек сверх вместимости, поэтому тест одинаково верен и при
+            // storage = 0, и при storage = 400.
+            for (const [id, initial] of Object.entries(before.resources)) {
+                const after = snapshot.resources[id];
+
+                if (id === "BuildPower") {
+                    // Поток производится в ходу и сбрасывается в конце.
+                    expect(after.count).toBe("0.00");
+                    continue;
+                }
+
+                const startCount = Number(initial.count);
+                const storage = Number(after.storage);
+                const renewRate = Number(after.renewRate);
+                const spoilRate = Number(after.spoilRate ?? "0");
+
+                if (initial.owner === "nature") {
+                    // Природные пулы восстанавливаются и обрезаются по складу.
+                    const expected = Math.min(startCount * (1 + renewRate), storage);
+                    expect(Number(after.count)).toBeCloseTo(expected, 2);
+                    continue;
+                }
+
+                const excess = Math.max(0, startCount - storage);
+                expect(Number(after.count)).toBeCloseTo(
+                    startCount - excess * spoilRate,
+                    2
+                );
+            }
         });
     });
 
@@ -127,7 +161,10 @@ describe("GameManager", () => {
 
             manager.send("saveGame");
             manager.send("tick", { step: 1 });
-            expect(manager.serializeEconomy().resources.Wood.count).toBe("396.00");
+
+            // Тик меняет состояние, но проверка не зависит от конкретных
+            // значений складов: важно, что загрузка возвращает сейв.
+            expect(manager.serializeEconomy()).not.toEqual(before);
 
             manager.send("loadGame");
 

@@ -18,4 +18,11 @@ export interface EconomySnapshot {
     resources: Record<string, ResourceData>;
     balanceHistory: Record<string, BalanceHistoryEntry[]>;
     balanceHistoryLength: number;
+    /**
+     * Снимок зданий для UI. Формат строк — как у serializeForStore,
+     * поэтому store не работает с Decimal напрямую.
+     */
+    buildings?: Record<string, Record<string, unknown>>;
+    /** Очередь строительства в снимке для UI. */
+    constructionProjects?: Array<Record<string, string>>;
 }

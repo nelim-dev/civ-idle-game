@@ -1,15 +1,23 @@
 import { EventBus } from "@/logic/EventBus";
 import { Saveable } from "@/logic/services/GameSave/Isaveable";
 import { ResourceManager } from "./ResourceSystem/ResourceManager";
+import { BuildingManager } from "./BuildingSystem/BuildingManager";
+import type { BuildingData } from "./BuildingSystem/Building";
 import type { ResourceData } from "@/shared/types/Resource";
 import type { EconomySnapshot } from "@/shared/types/Economy";
 
 export class EconomySystem implements Saveable{
     private tickSubscribeOff: () => void;
     private resourcesManager: ResourceManager;
-    constructor(eventBus: EventBus, resourcesData: ResourceData[]){
+    private buildingManager: BuildingManager;
+    constructor(
+        eventBus: EventBus,
+        resourcesData: ResourceData[],
+        buildingsData: BuildingData[] = []
+    ){
         this.tickSubscribeOff = eventBus.on("tick", this.handleTick);
         this.resourcesManager = new ResourceManager(resourcesData);
+        this.buildingManager = new BuildingManager(buildingsData, this.resourcesManager);
     }
 
     private handleTick = () => {
@@ -25,26 +33,30 @@ export class EconomySystem implements Saveable{
      * 5. исследования и прочее;
      * 6. конец хода.
      *
-     * Фазы 1–5 подключаются вместе с PopulationSystem и BuildingManager.
-     * Сейчас выполняется только конец хода: восстановление природы, порча
-     * излишков, обрезка природных пулов и запись истории баланса.
+     * BuildingManager выполняет фазы 2–4, ResourceManager — конец хода.
+     * Фазы населения и исследований подключаются на этапах 3 и далее.
      */
     private runTurn(): void {
+        this.buildingManager.tick();
         this.resourcesManager.tick();
     }
 
     public serialize(): EconomySnapshot {
-        const data = this.resourcesManager.serializeForStore();
+        const resourcesData = this.resourcesManager.serializeForStore();
+        const buildingsData = this.buildingManager.serializeForStore().buildingsManager;
         return {
-            resources: data.resourcesManager.resources,
-            balanceHistory: data.resourcesManager.balanceHistory,
-            balanceHistoryLength: Number(data.resourcesManager.balanceHistoryLength),
+            resources: resourcesData.resourcesManager.resources,
+            balanceHistory: resourcesData.resourcesManager.balanceHistory,
+            balanceHistoryLength: Number(resourcesData.resourcesManager.balanceHistoryLength),
+            buildings: buildingsData.buildings,
+            constructionProjects: buildingsData.constructionProjects,
         };
     }
     public serializeForSave(): Record<string, any>{
         return{
             economy:{
-            "resourcesManager": this.resourcesManager.serializeForSave()
+            "resourcesManager": this.resourcesManager.serializeForSave(),
+            ...this.buildingManager.serializeForSave()
             }
         }
     }
@@ -54,6 +66,12 @@ export class EconomySystem implements Saveable{
 
         if (economyData.resourcesManager) {
         this.resourcesManager.deserializeForSave(economyData.resourcesManager);
+        }
+
+        if (economyData.buildingsManager) {
+            this.buildingManager.deserializeForSave({
+                buildingsManager: economyData.buildingsManager
+            });
         }
         // Синхронизация store после загрузки — задача bridge (шаг 2).
     }

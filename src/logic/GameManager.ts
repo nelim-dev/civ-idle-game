@@ -1,7 +1,9 @@
 import { EventBus } from "./EventBus";
 import { EconomySystem } from "./services/Economy/EconomySystem";
 import resourceData from "@/data/resource.json"
+import buildingsData from "@/data/buildings.json"
 import { SaveManager } from "./services/GameSave/SaveManager";
+import type { BuildingData } from "./services/Economy/BuildingSystem/Building";
 import type { EconomySnapshot } from "@/shared/types/Economy";
 
 declare global {
@@ -13,7 +15,13 @@ export class GameManager{
     private saveManager: SaveManager;
     private constructor(){
         this.eventBus = new EventBus();
-        this.economySystem = new EconomySystem(this.eventBus, resourceData);
+        // JSON выводит объединённый тип с отсутствующими ключами, поэтому
+        // приводим контент к wire-контракту зданий явно.
+        this.economySystem = new EconomySystem(
+            this.eventBus,
+            resourceData,
+            buildingsData as unknown as BuildingData[]
+        );
         this.saveManager = new SaveManager(this.eventBus);
         this.saveManager.register(this.economySystem);
     }

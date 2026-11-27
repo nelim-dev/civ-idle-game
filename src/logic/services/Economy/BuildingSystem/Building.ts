@@ -290,6 +290,14 @@ export class Building implements Building, Saveable {
         return this.decayLevel;
     }
 
+    /**
+     * Устанавливает износ группы. Используется ремонтом в BuildingManager:
+     * износ не может стать отрицательным, но может превышать 100%.
+     */
+    public setDecayLevel(newDecayLevel: Decimal): void {
+        this.decayLevel = Decimal.max(newDecayLevel, new Decimal(0));
+    }
+
     public getDecayPerTurn(): Decimal {
         return this.decayPerTurn;
     }

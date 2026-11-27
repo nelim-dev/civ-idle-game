@@ -61,15 +61,21 @@ describe("storeBridge", () => {
 
     describe("tick", () => {
         it("обновляет gameStep и экономику", () => {
+            const manager = getGameManager();
             initStoreBridge();
 
-            getGameManager().send("tick", { step: 7 });
+            manager.send("tick", { step: 7 });
 
             const state = useGameStore.getState();
+            const economy = manager.serializeEconomy();
 
             expect(state.gameStep).toBe(7);
-            expect(state.economy.resources.Wood.count).toBe("396.00");
-            expect(state.economy.resources.WaterDeposit.count).toBe("800008000.00");
+            // Store получает ровно тот снимок, который отдаёт логика;
+            // конкретные значения складов в ожиданиях не фиксируются.
+            expect(state.economy.resources).toEqual(economy.resources);
+            // Интеграция: здания подключены к запущенному GameManager.
+            expect(state.economy.buildings?.CentralBase?.owned).toBe("1");
+            expect(state.economy.constructionProjects).toEqual([]);
         });
 
         it("без step не меняет gameStep", () => {
@@ -119,20 +125,25 @@ describe("storeBridge", () => {
 
     describe("loadGame", () => {
         it("синхронизирует store после загрузки сейва", () => {
-            initStoreBridge();
             const manager = getGameManager();
+            initStoreBridge();
+            const before = manager.serializeEconomy();
 
             manager.send("saveGame");
             manager.send("tick", { step: 1 });
 
-            expect(useGameStore.getState().economy.resources.Wood.count).toBe("396.00");
+            // После тика store отражает текущее состояние логики.
+            expect(useGameStore.getState().economy.resources).toEqual(
+                manager.serializeEconomy().resources
+            );
 
             manager.send("loadGame");
 
-            expect(useGameStore.getState().economy.resources.Wood.count).toBe("400.00");
-            expect(useGameStore.getState().economy.resources.WaterDeposit.count).toBe(
-                "800000000.00"
-            );
+            const afterLoad = useGameStore.getState().economy;
+            // Загрузка возвращает сохранённый снимок без привязки к числам складов.
+            expect(afterLoad.resources).toEqual(before.resources);
+            expect(afterLoad.buildings?.CentralBase?.owned).toBe("1");
+            expect(afterLoad.constructionProjects).toEqual([]);
         });
     });
 
