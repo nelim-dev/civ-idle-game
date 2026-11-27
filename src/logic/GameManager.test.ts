@@ -3,9 +3,12 @@
 import { GameManager, getGameManager } from "./GameManager";
 import { resetGameSingletons } from "@/test/helpers/resetGameSingletons";
 import resourceData from "@/data/resource.json";
+import populationData from "@/data/population.json";
 import type { ResourceData } from "@/shared/types/Resource";
+import type { Population } from "./services/Economy/PopulationSystem/PopulationSystem";
 
 const RESOURCES = resourceData as ResourceData[];
+const POPULATIONS = populationData as unknown as Population[];
 
 /** Ожидание берётся из контента, а не фиксируется числом в тесте. */
 function contentResource(id: string): ResourceData {
@@ -132,8 +135,29 @@ describe("GameManager", () => {
 
             // Ожидания не привязаны к числу стартовых складов. Проверяется
             // правило дизайна (docs/game-design_v1.md §5.4): портится только
-            // излишек сверх вместимости, поэтому тест одинаково верен и при
-            // storage = 0, и при storage = 400.
+            // излишек сверх вместимости. Дополнительно учитывается потребление
+            // населения: фаза населения выполняется до фазы зданий.
+            const population = POPULATIONS[0];
+            const populationSnapshot = population
+                ? before.population?.[population.id]
+                : undefined;
+            const populationCount = Number(populationSnapshot?.count ?? 0);
+            const foodPolicyFactor =
+                populationSnapshot?.foodPolicy === "economy"
+                    ? 0.5
+                    : populationSnapshot?.foodPolicy === "abundant"
+                        ? 1.5
+                        : 1;
+
+            const populationConsumption: Record<string, number> = {};
+            if (population) {
+                for (const [resourceId, rate] of Object.entries(population.consumes)) {
+                    const policyFactor = resourceId === "Food" ? foodPolicyFactor : 1;
+                    populationConsumption[resourceId] =
+                        populationCount * Number(rate) * policyFactor;
+                }
+            }
+
             for (const [id, initial] of Object.entries(before.resources)) {
                 const after = snapshot.resources[id];
 
@@ -155,9 +179,14 @@ describe("GameManager", () => {
                     continue;
                 }
 
-                const excess = Math.max(0, startCount - storage);
+                const consumed = Math.min(
+                    populationConsumption[id] ?? 0,
+                    startCount
+                );
+                const remaining = startCount - consumed;
+                const excess = Math.max(0, remaining - storage);
                 expect(Number(after.count)).toBeCloseTo(
-                    startCount - excess * spoilRate,
+                    remaining - excess * spoilRate,
                     2
                 );
             }

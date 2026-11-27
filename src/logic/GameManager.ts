@@ -2,8 +2,10 @@ import { EventBus } from "./EventBus";
 import { EconomySystem } from "./services/Economy/EconomySystem";
 import resourceData from "@/data/resource.json"
 import buildingsData from "@/data/buildings.json"
+import populationData from "@/data/population.json"
 import { SaveManager } from "./services/GameSave/SaveManager";
 import type { BuildingData } from "./services/Economy/BuildingSystem/Building";
+import type { Population } from "./services/Economy/PopulationSystem/PopulationSystem";
 import type { EconomySnapshot } from "@/shared/types/Economy";
 
 declare global {
@@ -20,7 +22,8 @@ export class GameManager{
         this.economySystem = new EconomySystem(
             this.eventBus,
             resourceData,
-            buildingsData as unknown as BuildingData[]
+            buildingsData as unknown as BuildingData[],
+            populationData as unknown as Population[]
         );
         this.saveManager = new SaveManager(this.eventBus);
         this.saveManager.register(this.economySystem);

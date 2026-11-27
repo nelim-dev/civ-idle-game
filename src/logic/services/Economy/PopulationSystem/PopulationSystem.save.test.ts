@@ -108,8 +108,8 @@ describe("PopulationSystem: снимок и сохранение", () => {
         target.system.deserializeForSave(save);
         target.system.tick(new Decimal(200));
 
-        // Коэффициенты роста остаются контентными: 1% от 100 = 101.
-        expect(Number(getSnapshot(target.system).count)).toBeCloseTo(101, 6);
+        // Коэффициенты роста остаются контентными: 1% от 10 = 10.1.
+        expect(Number(getSnapshot(target.system).count)).toBeCloseTo(10.1, 6);
     });
 
     it("старый сейв без населения оставляет стартовое состояние", () => {

@@ -202,6 +202,48 @@ export class BuildingManager implements Saveable {
         );
     }
 
+    // ─── Население: жильё и рабочие ──────────────────────────────────────────
+
+    /**
+     * Σ housingCapacity × owned × levelProductionFactor.
+     * Жильё — «продукт» здания, поэтому масштабируется уровнем (§6.6).
+     */
+    public getTotalHousingCapacity(): Decimal {
+        let total = new Decimal(0);
+
+        for (const building of Object.values(this.buildings)) {
+            const owned = building.getOwned();
+            if (owned.lte(0)) continue;
+
+            total = total.plus(
+                building
+                    .getHousingCapacity()
+                    .times(owned)
+                    .times(this.getLevelProductionFactor(building))
+            );
+        }
+
+        return total;
+    }
+
+    /**
+     * Σ workersRequired × owned для зданий с power > 0.
+     * Выключенное здание не создаёт спрос на рабочих (§6.2).
+     */
+    public getTotalWorkerDemand(): Decimal {
+        let total = new Decimal(0);
+
+        for (const building of Object.values(this.buildings)) {
+            const owned = building.getOwned();
+            if (owned.lte(0)) continue;
+            if (building.getPower().lte(0)) continue;
+
+            total = total.plus(building.getWorkersRequired().times(owned));
+        }
+
+        return total;
+    }
+
     // ─── Рабочие ─────────────────────────────────────────────────────────────
 
     /**

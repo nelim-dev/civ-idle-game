@@ -3,21 +3,37 @@ import { Saveable } from "@/logic/services/GameSave/Isaveable";
 import { ResourceManager } from "./ResourceSystem/ResourceManager";
 import { BuildingManager } from "./BuildingSystem/BuildingManager";
 import type { BuildingData } from "./BuildingSystem/Building";
+import { PopulationSystem } from "./PopulationSystem/PopulationSystem";
+import type { Population } from "./PopulationSystem/PopulationSystem";
 import type { ResourceData } from "@/shared/types/Resource";
-import type { EconomySnapshot } from "@/shared/types/Economy";
+import type { EconomySnapshot, PopulationWarning } from "@/shared/types/Economy";
 
 export class EconomySystem implements Saveable{
     private tickSubscribeOff: () => void;
     private resourcesManager: ResourceManager;
     private buildingManager: BuildingManager;
+    private populationSystem: PopulationSystem;
     constructor(
         eventBus: EventBus,
         resourcesData: ResourceData[],
-        buildingsData: BuildingData[] = []
+        buildingsData: BuildingData[] = [],
+        populationData: Population[] = []
     ){
         this.tickSubscribeOff = eventBus.on("tick", this.handleTick);
         this.resourcesManager = new ResourceManager(resourcesData);
         this.buildingManager = new BuildingManager(buildingsData, this.resourcesManager);
+        // Провайдеры позволяют пересчитать производные значения населения
+        // после загрузки сейва, не меняя ресурсы и здания.
+        this.populationSystem = new PopulationSystem(
+            populationData,
+            this.resourcesManager,
+            {
+                housingCapacityProvider: () =>
+                    this.buildingManager.getTotalHousingCapacity(),
+                workerDemandProvider: () =>
+                    this.buildingManager.getTotalWorkerDemand()
+            }
+        );
     }
 
     private handleTick = () => {
@@ -34,29 +50,39 @@ export class EconomySystem implements Saveable{
      * 6. конец хода.
      *
      * BuildingManager выполняет фазы 2–4, ResourceManager — конец хода.
-     * Фазы населения и исследований подключаются на этапах 3 и далее.
      */
     private runTurn(): void {
-        this.buildingManager.tick();
+        const housingCapacity = this.buildingManager.getTotalHousingCapacity();
+        const workerDemand = this.buildingManager.getTotalWorkerDemand();
+
+        this.populationSystem.tick(housingCapacity, workerDemand);
+        this.buildingManager.tick(this.populationSystem.getAvailableWorkers());
         this.resourcesManager.tick();
     }
 
     public serialize(): EconomySnapshot {
         const resourcesData = this.resourcesManager.serializeForStore();
         const buildingsData = this.buildingManager.serializeForStore().buildingsManager;
+        const population = this.populationSystem.serializeForStore().population;
+        const warnings = this.collectWarnings(population);
+
         return {
             resources: resourcesData.resourcesManager.resources,
             balanceHistory: resourcesData.resourcesManager.balanceHistory,
             balanceHistoryLength: Number(resourcesData.resourcesManager.balanceHistoryLength),
             buildings: buildingsData.buildings,
             constructionProjects: buildingsData.constructionProjects,
+            population,
+            warnings
         };
     }
+
     public serializeForSave(): Record<string, any>{
         return{
             economy:{
             "resourcesManager": this.resourcesManager.serializeForSave(),
-            ...this.buildingManager.serializeForSave()
+            ...this.buildingManager.serializeForSave(),
+            population: this.populationSystem.serializeForSave().population
             }
         }
     }
@@ -73,6 +99,26 @@ export class EconomySystem implements Saveable{
                 buildingsManager: economyData.buildingsManager
             });
         }
-        // Синхронизация store после загрузки — задача bridge (шаг 2).
+
+        // Население загружается после зданий: провайдеры жилья и спроса на
+        // рабочих должны видеть восстановленные здания.
+        if (economyData.population) {
+            this.populationSystem.deserializeForSave({
+                population: economyData.population
+            });
+        }
+    }
+
+    /** Агрегирует предупреждения населения для верхней панели без дублей. */
+    private collectWarnings(
+        population: Record<string, { warnings: PopulationWarning[] }>
+    ): PopulationWarning[] {
+        const warnings = new Set<PopulationWarning>();
+        for (const snapshot of Object.values(population)) {
+            for (const warning of snapshot.warnings) {
+                warnings.add(warning);
+            }
+        }
+        return Array.from(warnings);
     }
 }

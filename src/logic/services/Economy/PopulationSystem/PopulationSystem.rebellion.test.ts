@@ -44,11 +44,15 @@ function systemWithRebellion(
 
 describe("PopulationSystem: бунт и забастовка", () => {
     it("начисляет давление бунта при нулевых покрытиях", () => {
-        const { system } = setup(stablePopulation());
+        const { system } = setup(stablePopulation(), {
+            Food: { count: "0" },
+            Water: { count: "0" }
+        });
 
         system.tick(new Decimal(0));
 
         const snapshot = getSnapshot(system);
+        // foodCoverage = waterCoverage = housingCoverage = 0:
         // 0.1 + 0.05 + 0.05, satisfaction = 0
         expect(Number(snapshot.currentRebellion)).toBeCloseTo(0.2, 6);
         expect(Number(snapshot.satisfaction)).toBeCloseTo(0, 6);
