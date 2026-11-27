@@ -175,7 +175,7 @@ flowchart LR
 - раннер — Vitest 4.1.12, окружение по умолчанию `node`;
 - jsdom включается docblock-ом `// @vitest-environment jsdom` только для
   `GameManager` и `GameLoop`;
-- 16 тестовых файлов, 237 passed;
+- 24 тестовых файла, 237 passed, 61 failed — красная стадия этапа 3;
 - покрытие — `npm run test:coverage`; приоритетные зоны — `src/logic` и
   `src/integration`.
 
@@ -195,9 +195,16 @@ flowchart LR
 - конец хода и порядок фаз зданий `EconomySystem` — производство, строительство,
   износ/ремонт, порча излишков, лимит истории, сброс потоков.
 
+Красная стадия этапа 3 (реализация не начата):
+
+- `PopulationSystem` — 41 тест;
+- `BuildingManager.population` — 6;
+- `EconomySystem.population` — 7;
+- `GameManager.population` — 4;
+- `storeBridge.population` — 3.
+
 Пока не покрыто:
 
-- `PopulationSystem` и фазы населения;
 - UI-компоненты;
 - E2E;
 - Yandex SDK, cloud saves, реклама, лидерборды.
